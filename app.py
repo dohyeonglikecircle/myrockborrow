@@ -1,37 +1,33 @@
 import os
-import json  # 💥 import는 무조건 맨 위로!
+import json
 import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
+from firebase_admin import credentials, firestore
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
-from collections import defaultdict
 
 app = Flask(__name__)
 app.secret_key = 'moyorak_secret_key_1234'
 
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-# ==========================================
-# 💥 파이어베이스 연결 (보안 강화 및 중복 제거 버전) 💥
-# ==========================================
+# 1. 파이어베이스 인증 정보 가져오기
 firebase_key_json = os.environ.get('FIREBASE_KEY')
 
-if firebase_key_json:
-    # 1. Render 배포 서버일 때 (환경변수 사용)
-    cred_dict = json.loads(firebase_key_json)
-    cred = credentials.Certificate(cred_dict)
-else:
-    # 2. 내 컴퓨터 로컬 환경일 때 (파일 사용)
-    # 반드시 파일명이 firebase_key.json 이어야 해!
-    cred = credentials.Certificate('firebase_key.json')
+try:
+    if not firebase_admin._apps:
+        if firebase_key_json:
+            # Render 서버 환경
+            cred_dict = json.loads(firebase_key_json)
+            cred = credentials.Certificate(cred_dict)
+        else:
+            # 내 컴퓨터 환경 (파일이 있을 때만)
+            cred = credentials.Certificate('firebase_key.json')
+        
+        firebase_admin.initialize_app(cred)
+    
+    db = firestore.client()
+    print("✅ Firebase Connected Successfully!")
+except Exception as e:
+    print(f"❌ Firebase Connection Error: {e}")
 
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
-# ==========================================
+# (이 아래부터는 @app.route('/') 코드 시작...)
 
 # (이 아래 @app.route('/') 부터는 기존 코드 그대로 놔두면 됨!)
 @app.route('/')
