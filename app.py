@@ -1,3 +1,4 @@
+import os
 import json  # 💥 import는 무조건 맨 위로!
 import firebase_admin
 from firebase_admin import credentials
