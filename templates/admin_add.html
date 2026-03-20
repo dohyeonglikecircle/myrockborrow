@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>모여락 관리자 - 악기 등록</title>
+    <link rel="icon" href="/static/images/moyorak_logo.ico">
+    <style>
+        body { background-color: #121212; color: #fff; font-family: sans-serif; margin: 0; padding: 40px 20px; }
+        .form-box { background-color: #1f1f1f; padding: 30px; border-radius: 8px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
+        .logo { display: block; text-align: center; margin-bottom: 20px; }
+        .logo img { height: 50px; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0 20px 0; background-color: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background-color: #f39c12; color: #121212; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="form-box">
+        <a href="/" class="logo"><img src="/static/images/moyorak_logo.png" alt="모여락 로고"></a>
+        <h2 style="text-align: center;">새 악기 등록</h2>
+        
+        <form action="/admin/add" method="POST" enctype="multipart/form-data">
+            <label>세션 분류:</label>
+            <select name="session_type">
+                <option value="Guitar">기타</option>
+                <option value="Base">베이스</option>
+                <option value="Drum">드럼</option>
+                <option value="Keyboard">키보드</option>
+                <option value="Vocal">보컬</option>
+            </select>
+
+            <label>악기 이름:</label>
+            <input type="text" name="name" required placeholder="예: 펜더 스트라토캐스터">
+
+            <label>현재 상태:</label>
+            <select name="status">
+                <option value="대여 가능">대여 가능</option>
+                <option value="대여 중">대여 중</option>
+                <option value="수리 중">수리 중</option>
+            </select>
+
+            <label>악기 사진 첨부:</label>
+            <input type="file" name="image_file" accept="image/*" required>
+
+            <button type="submit">등록하기</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>모여락 회원가입</title>
+    <link rel="icon" href="/static/images/moyorak_logo.ico">
+    <style>
+        body { background-color: #121212; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-box { background-color: #1f1f1f; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: center; width: 320px; }
+        .login-box img { height: 50px; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background-color: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #f39c12; color: #121212; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; }
+        button:hover { background-color: #e67e22; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <a href="/"><img src="/static/images/moyorak_logo.png" alt="모여락 로고"></a>
+        <h2>회원가입</h2>
+        <form action="/signup" method="POST">
+            <input type="text" name="username" placeholder="아이디" required>
+            <input type="password" name="password" placeholder="비밀번호" required>
+            <input type="text" name="name" placeholder="이름" required>
+            <select name="generation">
+                <option value="28">28기</option>
+                <option value="28.5">28.5기</option>
+                <option value="29">29기</option>
+            </select>
+            <select name="session_type">
+                <option value="Vocal">보컬</option>
+                <option value="Guitar">기타</option>
+                <option value="Base">베이스</option>
+                <option value="Drum">드럼</option>
+                <option value="Keyboard">키보드</option>
+            </select>
+            <button type="submit">가입하기</button>
+        </form>
+    </div>
+</body>
+</html>

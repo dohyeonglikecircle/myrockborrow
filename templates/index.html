@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>모여락 공용악기대여</title>
+    <link rel="icon" href="/static/images/moyorak_logo.ico">
+    <style>
+        body { background-color: #121212; color: #fff; font-family: sans-serif; margin: 0; text-align: center; }
+        
+        /* 헤더 스타일 */
+        header { 
+            background-color: #1a1a1a; padding: 15px 30px; display: flex;         
+            align-items: center; justify-content: space-between; border-bottom: 1px solid #333; 
+        }
+        .header-left { display: flex; align-items: center; }
+        .header-left a.logo-link { margin-right: 20px; }
+        .header-left img { height: 45px; transition: transform 0.2s; }
+        .header-left img:hover { transform: scale(1.05); }
+        .header-title { color: #f39c12; font-size: 1.5em; font-weight: bold; margin: 0; letter-spacing: 1px; }
+
+        .header-right a {
+            color: #ccc; text-decoration: none; margin-left: 15px; padding: 8px 16px;
+            border: 1px solid #555; border-radius: 5px; font-size: 0.9em; font-weight: bold; transition: 0.3s;
+        }
+        .header-right a:hover { background-color: #f39c12; color: #121212; border-color: #f39c12; }
+        .header-right .signup-btn { background-color: #333; color: white; }
+
+        /* 메인 본문 */
+        .hero { padding: 80px 20px; }
+        p { color: #aaa; font-size: 1.2em; margin-bottom: 40px; }
+        
+        .btn-group a { 
+            display: inline-block; padding: 15px 30px; margin: 10px; 
+            background-color: #333; color: white; text-decoration: none; 
+            border-radius: 8px; font-weight: bold; font-size: 1.1em; transition: 0.3s; 
+            border: 1px solid #555;
+        }
+        .btn-group a:hover { background-color: #f39c12; color: #121212; }
+        .admin-btn { background-color: #e74c3c !important; border-color: #c0392b !important; }
+
+        /* 💥 새로 추가된 바로가기 버튼 스타일 💥 */
+        .shortcut-section { margin-top: 50px; padding-top: 30px; border-top: 1px dashed #333; }
+        .shortcut-section h3 { color: #aaa; font-size: 1.1em; margin-bottom: 20px; }
+        .shortcut-group a {
+            display: inline-block; padding: 12px 25px; margin: 0 10px;
+            background-color: transparent; color: #3498db; text-decoration: none;
+            border-radius: 30px; font-weight: bold; border: 2px solid #3498db; transition: 0.3s;
+        }
+        .shortcut-group a:hover { background-color: #3498db; color: white; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <a href="/" class="logo-link"><img src="/static/images/moyorak_logo.png" alt="홈으로"></a>
+            <div class="header-title">모여락 공용악기대여</div>
+        </div>
+        
+        <div class="header-right">
+            {% if session.get('username') %}
+                <span style="color: #f39c12; margin-right: 15px; font-weight: bold;">{{ session.get('username') }}님 🤘</span>
+                <a href="/logout">로그아웃</a>
+            {% else %}
+                <a href="/login">로그인</a>
+                <a href="/signup" class="signup-btn">회원가입</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="hero">
+        <p>원하는 세션의 악기를 확인하고 대여하세요!</p>
+        
+        <div class="btn-group">
+            <a href="/session/Vocal">🎤 보컬</a> 
+            <a href="/session/Guitar">🎸 기타</a>
+            <a href="/session/Base">🎸 베이스</a>
+            <a href="/session/Drum">🥁 드럼</a>
+            <a href="/session/Keyboard">🎹 키보드</a>
+            
+            {% if session.get('username') == 'admin' %}
+            <a href="/admin/add" class="admin-btn">⚙️ 관리자 악기 등록</a>
+            {% endif %}
+        </div>
+
+        <div class="shortcut-section">
+            <h3>🔗 빠른 바로가기</h3>
+            <div class="shortcut-group">
+                <a href="#" target="_blank">📌 공연 선곡 및 일정</a>
+                <a href="https://ddrak.vercel.app/" target="_blank">📌 화요뜨락 홈페이지</a>
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>
