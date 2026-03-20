@@ -1,5 +1,4 @@
-import os
-import json  # 💥 json 라이브러리 추가!
+import json  # 💥 import는 무조건 맨 위로!
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
@@ -15,30 +14,17 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # ==========================================
-# 💥 파이어베이스 연결 (보안 강화 버전) 💥
+# 💥 파이어베이스 연결 (보안 강화 및 중복 제거 버전) 💥
 # ==========================================
-firebase_key_json = os.environ.get('FIREBASE_KEY') # 서버의 비밀 금고(환경변수)에서 키를 꺼내봄
-
-if firebase_key_json:
-    # 1. 배포된 실제 서버일 때: 비밀 금고의 텍스트를 읽어서 인증
-    cred_dict = json.loads(firebase_key_json)
-    cred = credentials.Certificate(cred_dict)
-else:
-    # 2. 내 컴퓨터(로컬)에서 개발할 때: 기존처럼 폴더에 있는 파일로 인증
-    # 파일 상단에 import json 추가 확인!
-import json 
-
-# ... (중략) ...
-
-# 💥 이 부분이 핵심이야! 💥
 firebase_key_json = os.environ.get('FIREBASE_KEY')
 
 if firebase_key_json:
-    # Render 서버일 때 (환경변수 읽기)
+    # 1. Render 배포 서버일 때 (환경변수 사용)
     cred_dict = json.loads(firebase_key_json)
     cred = credentials.Certificate(cred_dict)
 else:
-    # 내 컴퓨터일 때 (파일 읽기)
+    # 2. 내 컴퓨터 로컬 환경일 때 (파일 사용)
+    # 반드시 파일명이 firebase_key.json 이어야 해!
     cred = credentials.Certificate('firebase_key.json')
 
 if not firebase_admin._apps:
