@@ -8,37 +8,39 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 app = Flask(__name__)
 app.secret_key = 'moyorak_secret_key_1234' # 세션 보안키
 
-# 1. 파이어베이스 인증 및 DB 연결 (REST 방식 강제)
+# 1. 파이어베이스 인증 및 DB 연결 (가장 확실한 버전)
 firebase_key_json = os.environ.get('FIREBASE_KEY')
 
-try:
-    if not firebase_admin._apps:
-        if firebase_key_json:
-            # Vercel 환경: 환경변수에서 JSON 로드
-            key_clean = firebase_key_json.strip()
-            # 혹시 앞뒤에 따옴표가 붙어있으면 제거
-            if key_clean.startswith('"') and key_clean.endswith('"'):
-                key_clean = key_clean[1:-1]
-            
-            cred_dict = json.loads(key_clean.replace('\\n', '\n'))
-            cred = credentials.Certificate(cred_dict)
-            firebase_admin.initialize_app(cred)
-            
-            # Vercel 무한 로딩 방지를 위해 REST 클라이언트 사용
-            db = google_firestore.Client(
-                project=cred_dict['project_id'],
-                credentials=cred._get_credential()
-            )
-        else:
-            # 로컬 환경: 파일에서 로드
-            cred = credentials.Certificate('firebase_key.json')
-            firebase_admin.initialize_app(cred)
-            db = firestore.client()
-            
-    print("✅ Firebase Connected Successfully!")
-except Exception as e:
-    print(f"❌ Firebase Connection Error: {e}")
-    db = None
+if not firebase_admin._apps:
+    if firebase_key_json:
+        # 환경변수 문자열 정리
+        raw_json = firebase_key_json.strip()
+        if raw_json.startswith('"') and raw_json.endswith('"'):
+            raw_json = raw_json[1:-1]
+        
+        # JSON 로드 시도
+        cred_dict = json.loads(raw_json.replace('\\n', '\n'))
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+        
+        # Vercel용 REST 클라이언트 생성
+        db = google_firestore.Client(
+            project=cred_dict['project_id'],
+            credentials=cred._get_credential()
+        )
+        print("✅ Firebase Connected!")
+    else:
+        # 로컬 테스트 환경
+        cred = credentials.Certificate('firebase_key.json')
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+else:
+    # 이미 앱이 실행 중인 경우 db 객체만 다시 확인
+    try:
+        db = firestore.client()
+    except:
+        # Vercel 환경에서 client()가 실패할 경우 위와 동일하게 생성
+        pass
 
 # --- 라우팅 시작 ---
 
