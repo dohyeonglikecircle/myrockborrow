@@ -77,7 +77,7 @@
             <a href="/session/Drum">🥁 드럼</a>
             <a href="/session/Keyboard">🎹 키보드</a>
             
-            {% if session.get('username') == 'admin' %}
+            {% if session.get('user') == 'admin' %}
             <a href="/admin/add" class="admin-btn">⚙️ 관리자 악기 등록</a>
             {% endif %}
         </div>
