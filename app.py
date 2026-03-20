@@ -4,94 +4,92 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import timedelta
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'moyorak_final_system_2026'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
 
-# --- 세션 및 쿠키 보안 설정 (Vercel 최적화) ---
-app.config['SECRET_KEY'] = 'moyorak_2026_super_secret'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2) # 2시간 유지
-app.config['SESSION_COOKIE_NAME'] = 'moyorak_session'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = True  # Vercel(HTTPS) 환경 필수
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-
-# 파이어베이스 설정
+# Vercel 환경변수
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
-FIRESTORE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents/users"
+FIRESTORE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents"
 
-def get_user_data(username):
+# --- 데이터베이스 통신 함수 ---
+def get_db_data(collection, document):
     try:
-        url = f"{FIRESTORE_URL}/{username}"
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            fields = response.json().get('fields', {})
-            # 데이터 추출 시 안전하게 .get() 사용 (대소문자 무관하게 아이디 반환)
-            return {
-                'username': fields.get('username', {}).get('stringValue', username),
-                'password': fields.get('password', {}).get('stringValue', ''),
-                'role': fields.get('role', {}).get('stringValue', 'user')
-            }
-    except Exception as e:
-        print(f"🚨 API Error: {e}")
+        url = f"{FIRESTORE_URL}/{collection}/{document}"
+        res = requests.get(url, timeout=5)
+        if res.status_code == 200:
+            return res.json().get('fields', {})
+    except: return None
     return None
 
+# --- 메인 라우팅 ---
 @app.route('/')
 def home():
-    # index.html에서 {{ session.get('user') }}를 쓰니까 세션 확인
-    current_user = session.get('user')
-    return render_template('index.html', user=current_user)
+    return render_template('index.html', user=session.get('user'))
 
+# --- 🎤 세션 상세 페이지 (파트장 정보 & 예약) ---
+@app.route('/session/<session_name>')
+def view_session(session_name):
+    # 1. 파트장 정보 가져오기 (sessions 컬렉션에서 해당 세션 문서 조회)
+    leader_info = get_db_data('sessions', session_name)
+    
+    # 2. 악기 목록 가져오기 (instruments 컬렉션에서 해당 세션 악기 조회 - 실제로는 쿼리가 필요하지만 일단 단일 구조로 가정)
+    # 보컬을 제외한 파트만 예약 버튼이 보이도록 HTML에서 처리할 거야.
+    
+    leader = {
+        'name': leader_info.get('leader_name', {}).get('stringValue', '미정'),
+        'contact': leader_info.get('contact', {}).get('stringValue', '정보 없음'),
+        'notice': leader_info.get('notice', {}).get('stringValue', '공지사항이 없습니다.')
+    }
+    
+    return render_template('session_view.html', 
+                           session_name=session_name, 
+                           leader=leader, 
+                           user=session.get('user'))
+
+# --- ⚙️ 관리자: 파트장 및 세션 설정 ---
+@app.route('/admin/setup', methods=['GET', 'POST'])
+def admin_setup():
+    if session.get('user') != 'admin':
+        flash("관리자 권한이 필요합니다.")
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        s_name = request.form.get('session_name') # Vocal, Guitar 등
+        l_name = request.form.get('leader_name')
+        contact = request.form.get('contact')
+        
+        # Firestore에 파트장 정보 업데이트
+        url = f"{FIRESTORE_URL}/sessions/{s_name}"
+        payload = {
+            "fields": {
+                "leader_name": {"stringValue": l_name},
+                "contact": {"stringValue": contact}
+            }
+        }
+        requests.patch(url + "?updateMask.fieldPaths=leader_name&updateMask.fieldPaths=contact", json=payload)
+        flash(f"{s_name} 세션 정보가 수정되었습니다.")
+        return redirect(url_for('home'))
+
+    return render_template('admin_setup.html')
+
+# --- 📝 로그인/회원가입/로그아웃 (기존 동일) ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip().lower()
         password = request.form.get('password', '')
-
-        user_data = get_user_data(username)
-        
-        if user_data and user_data['password'] == password:
-            # 세션 강제 활성화
-            session.clear() # 기존 세션 청소
+        u_data = get_db_data('users', username)
+        if u_data and u_data.get('password', {}).get('stringValue') == password:
             session.permanent = True
-            session['user'] = user_data['username']
-            session['role'] = user_data['role']
-            print(f"✅ Login Success: {session['user']}")
+            session['user'] = username
             return redirect(url_for('home'))
-        else:
-            flash("아이디 또는 비밀번호가 틀렸습니다.")
-            
+        flash("로그인 실패")
     return render_template('login.html')
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip().lower()
-        password = request.form.get('password', '')
-        
-        if get_user_data(username):
-            flash("이미 존재하는 아이디입니다.")
-        else:
-            url = f"{FIRESTORE_URL}?documentId={username}"
-            payload = {
-                "fields": {
-                    "username": {"stringValue": username},
-                    "password": {"stringValue": password},
-                    "role": {"stringValue": "user"}
-                }
-            }
-            res = requests.post(url, json=payload, timeout=5)
-            if res.status_code == 200:
-                flash("가입 성공! 로그인해주세요.")
-                return redirect(url_for('login'))
-    return render_template('signup.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('home'))
-
-# 404 방지
-@app.route('/session/<name>')
-def temp_session(name):
-    return f"<h3>{name} 세션 페이지 준비 중</h3><a href='/'>홈으로</a>"
 
 if __name__ == '__main__':
     app.run(debug=True)

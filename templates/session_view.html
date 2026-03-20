@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ session_name }} 상세 정보</title>
+    <style>
+        body { background-color: #121212; color: white; text-align: center; font-family: sans-serif; }
+        .card { background: #1a1a1a; padding: 20px; border-radius: 10px; display: inline-block; margin-top: 50px; border: 1px solid #333; }
+        .leader-box { border-bottom: 1px solid #444; padding-bottom: 15px; margin-bottom: 15px; }
+        .btn-reserve { background: #f39c12; color: black; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .btn-reserve:hover { background: #e67e22; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🎸 {{ session_name }} 세션</h1>
+        
+        <div class="leader-box">
+            <h3>👤 파트장 정보</h3>
+            <p>이름: {{ leader.name }}</p>
+            <p>연락처: {{ leader.contact }}</p>
+        </div>
+
+        {% if session_name != 'Vocal' %}
+            <h3>📦 대여 가능한 악기</h3>
+            <p>현재 등록된 악기가 없습니다.</p>
+            {% if user %}
+                <a href="#" class="btn-reserve">📅 예약하기</a>
+            {% else %}
+                <p style="color: #888;">로그인 후 예약이 가능합니다.</p>
+            {% endif %}
+        {% else %}
+            <p>📢 보컬 세션은 별도의 악기 대여가 없습니다.</p>
+        {% endif %}
+        
+        <br><br>
+        <a href="/" style="color: #aaa; text-decoration: none;">← 홈으로 돌아가기</a>
+    </div>
+</body>
+</html>
