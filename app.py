@@ -1,57 +1,50 @@
 import os
-import firebase_admin
-from firebase_admin import credentials, firestore
-from google.cloud import firestore as google_firestore
+import requests
+import time
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_final_2026_key'
+app.config['SECRET_KEY'] = 'moyorak_rest_final_secret'
 
-# 전역 변수로 DB 객체 관리
-db = None
+# --- 파이어베이스 설정 ---
+PROJECT_ID = os.environ.get('FB_PROJECT_ID')
+# REST API 주소 설정
+FIRESTORE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents/users"
 
-def get_db():
-    global db
-    if db is None:
-        project_id = os.environ.get('FB_PROJECT_ID')
-        client_email = os.environ.get('FB_CLIENT_EMAIL')
-        private_key = os.environ.get('FB_PRIVATE_KEY')
+def get_user_data(username):
+    """Firestore에서 유저 데이터를 직접 가져오는 함수 (REST)"""
+    try:
+        url = f"{FIRESTORE_URL}/{username}"
+        response = requests.get(url, timeout=5) # 5초 안에 대답 없으면 끊기
+        if response.status_code == 200:
+            data = response.json()
+            # Firestore REST API 특유의 필드 구조 파싱
+            fields = data.get('fields', {})
+            return {
+                'username': fields.get('username', {}).get('stringValue'),
+                'password': fields.get('password', {}).get('stringValue'),
+                'role': fields.get('role', {}).get('stringValue', 'user')
+            }
+    except Exception as e:
+        print(f"🚨 REST GET Error: {e}")
+    return None
 
-        # 1. 환경변수가 없으면 로컬 파일로 시도
-        if not all([project_id, client_email, private_key]):
-            try:
-                if not firebase_admin._apps:
-                    cred = credentials.Certificate('firebase_key.json')
-                    firebase_admin.initialize_app(cred)
-                db = firestore.client()
-                return db
-            except: return None
-
-        # 2. Vercel 환경: REST 모드로 초고속 연결
-        try:
-            if not firebase_admin._apps:
-                formatted_key = private_key.replace('\\n', '\n')
-                cred_dict = {
-                    "type": "service_account",
-                    "project_id": project_id,
-                    "private_key": formatted_key,
-                    "client_email": client_email,
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                }
-                cred = credentials.Certificate(cred_dict)
-                firebase_admin.initialize_app(cred)
-
-            # 🔥 중요: Vercel 무한 로딩을 방지하기 위해 'rest' 방식을 명시적으로 사용
-            db = google_firestore.Client(
-                project=project_id,
-                credentials=credentials.Certificate(cred_dict).get_credential(),
-                client_options={"api_endpoint": "firestore.googleapis.com"} # REST 엔드포인트 강제
-            )
-            return db
-        except Exception as e:
-            print(f"🚨 DB 연결 실패: {str(e)}")
-            return None
-    return db
+def save_user_data(username, password):
+    """Firestore에 유저 데이터를 직접 저장하는 함수 (REST)"""
+    try:
+        url = f"{FIRESTORE_URL}?documentId={username}"
+        payload = {
+            "fields": {
+                "username": {"stringValue": username},
+                "password": {"stringValue": password},
+                "role": {"stringValue": "user"}
+            }
+        }
+        response = requests.post(url, json=payload, timeout=5)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"🚨 REST POST Error: {e}")
+    return False
 
 # --- 라우팅 ---
 
@@ -63,50 +56,35 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        current_db = get_db()
-        if not current_db:
-            flash("DB 연결에 실패했습니다.")
-            return redirect(url_for('login'))
-        
         username = request.form.get('username', '').strip().lower()
         password = request.form.get('password', '')
 
-        try:
-            # 💥 .get() 호출 시 타임아웃 방지를 위해 가볍게 호출
-            user_ref = current_db.collection('users').document(username)
-            doc = user_ref.get()
-
-            if doc.exists:
-                user_data = doc.to_dict()
-                if user_data.get('password') == password:
-                    session['user'] = username
-                    return redirect(url_for('home'))
-                else: flash("비밀번호가 틀렸습니다.")
-            else: flash("존재하지 않는 아이디입니다.")
-        except Exception as e:
-            flash(f"로그인 오류: {str(e)}")
+        user_data = get_user_data(username)
+        if user_data and user_data['password'] == password:
+            session['user'] = username
+            session['role'] = user_data['role']
+            return redirect(url_for('home'))
+        else:
+            flash("아이디 또는 비밀번호가 틀렸습니다.")
             
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        current_db = get_db()
-        if not current_db:
-            flash("DB 연결 실패")
-            return redirect(url_for('signup'))
-        
         username = request.form.get('username', '').strip().lower()
         password = request.form.get('password', '')
-        try:
-            user_ref = current_db.collection('users').document(username)
-            if not user_ref.get().exists:
-                user_ref.set({'username': username, 'password': password, 'role': 'user'})
-                flash("가입 성공!")
+
+        # 이미 존재하는지 확인
+        if get_user_data(username):
+            flash("이미 존재하는 아이디입니다.")
+        else:
+            if save_user_data(username, password):
+                flash("회원가입 성공! 로그인해주세요.")
                 return redirect(url_for('login'))
-            else: flash("이미 존재하는 아이디입니다.")
-        except Exception as e:
-            flash(f"회원가입 오류: {str(e)}")
+            else:
+                flash("회원가입 중 서버 오류가 발생했습니다.")
+                
     return render_template('signup.html')
 
 @app.route('/logout')
