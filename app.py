@@ -1,4 +1,5 @@
 import os
+import json  # 💥 json 라이브러리 추가!
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
@@ -13,11 +14,39 @@ app.secret_key = 'moyorak_secret_key_1234'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-cred = credentials.Certificate('firebase_key.json')
+# ==========================================
+# 💥 파이어베이스 연결 (보안 강화 버전) 💥
+# ==========================================
+firebase_key_json = os.environ.get('FIREBASE_KEY') # 서버의 비밀 금고(환경변수)에서 키를 꺼내봄
+
+if firebase_key_json:
+    # 1. 배포된 실제 서버일 때: 비밀 금고의 텍스트를 읽어서 인증
+    cred_dict = json.loads(firebase_key_json)
+    cred = credentials.Certificate(cred_dict)
+else:
+    # 2. 내 컴퓨터(로컬)에서 개발할 때: 기존처럼 폴더에 있는 파일로 인증
+    # 파일 상단에 import json 추가 확인!
+import json 
+
+# ... (중략) ...
+
+# 💥 이 부분이 핵심이야! 💥
+firebase_key_json = os.environ.get('FIREBASE_KEY')
+
+if firebase_key_json:
+    # Render 서버일 때 (환경변수 읽기)
+    cred_dict = json.loads(firebase_key_json)
+    cred = credentials.Certificate(cred_dict)
+else:
+    # 내 컴퓨터일 때 (파일 읽기)
+    cred = credentials.Certificate('firebase_key.json')
+
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
+# ==========================================
 
+# (이 아래 @app.route('/') 부터는 기존 코드 그대로 놔두면 됨!)
 @app.route('/')
 def home(): return render_template('index.html')
 
