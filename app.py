@@ -1,20 +1,21 @@
 import os
-import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud import firestore as google_firestore
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_1234_secret'
+app.config['SECRET_KEY'] = 'moyorak_final_secret'
 
 def get_db():
     if not firebase_admin._apps:
-        # 환경변수 가져오기
-        raw_key = os.environ.get('FIREBASE_KEY', '').strip()
-        
-        if not raw_key:
-            # 로컬 테스트 (파일 존재 시)
+        # 쪼개서 넣은 환경변수들 가져오기
+        project_id = os.environ.get('FB_PROJECT_ID')
+        client_email = os.environ.get('FB_CLIENT_EMAIL')
+        private_key = os.environ.get('FB_PRIVATE_KEY')
+
+        if not all([project_id, client_email, private_key]):
+            # 로컬 환경 (파일 존재 시)
             try:
                 cred = credentials.Certificate('firebase_key.json')
                 firebase_admin.initialize_app(cred)
@@ -22,36 +23,32 @@ def get_db():
             except: return None
 
         try:
-            # [강제 보정 로직] 
-            # 1. Vercel이 앞뒤에 붙였을지 모르는 따옴표 제거
-            if raw_key.startswith('"') and raw_key.endswith('"'):
-                raw_key = raw_key[1:-1]
+            # 환경변수에서 가져온 프라이빗 키의 줄바꿈 보정
+            formatted_key = private_key.replace('\\n', '\n')
             
-            # 2. 파이썬 스타일의 이중 백슬래시 보정
-            raw_key = raw_key.replace('\\\\n', '\\n')
-            
-            # 3. JSON 파싱
-            cred_dict = json.loads(raw_key, strict=False)
-            
-            # 4. private_key 내의 실제 줄바꿈 문자 처리
-            if 'private_key' in cred_dict:
-                cred_dict['private_key'] = cred_dict['private_key'].replace('\\n', '\n')
+            # 인증서 딕셔너리 수동 조립
+            cred_dict = {
+                "type": "service_account",
+                "project_id": project_id,
+                "private_key": formatted_key,
+                "client_email": client_email,
+                "token_uri": "https://oauth2.googleapis.com/token",
+            }
             
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred)
             
             return google_firestore.Client(
-                project=cred_dict['project_id'],
+                project=project_id,
                 credentials=cred._get_credential()
             )
         except Exception as e:
-            # 실패 시 로그에 에러 원인 출력
-            print(f"🚨 JSON 파싱 최종 실패: {str(e)}")
+            print(f"🚨 인증서 조립 실패: {str(e)}")
             return None
     else:
         return firestore.client()
 
-# --- 이하 라우팅 (기존과 동일하지만 db 체크 강화) ---
+# --- 라우팅 (로그인/회원가입 로직은 동일) ---
 
 @app.route('/')
 def home():
@@ -63,7 +60,7 @@ def login():
     if request.method == 'POST':
         db = get_db()
         if not db:
-            flash("DB 연결 실패! 환경변수 형식이 여전히 잘못되었습니다.")
+            flash("DB 연결 실패! 환경변수(ID, Email, Key)를 다시 확인하세요.")
             return redirect(url_for('login'))
         
         username = request.form.get('username', '').strip().lower()
