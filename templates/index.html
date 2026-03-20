@@ -57,8 +57,8 @@
         </div>
         
         <div class="header-right">
-            {% if session.get('username') %}
-                <span style="color: #f39c12; margin-right: 15px; font-weight: bold;">{{ session.get('username') }}님 🤘</span>
+            {% if session.get('user') %}
+                <span style="color: #f39c12; margin-right: 15px; font-weight: bold;">{{ session.get('user') }}님 🤘</span>
                 <a href="/logout">로그아웃</a>
             {% else %}
                 <a href="/login">로그인</a>
