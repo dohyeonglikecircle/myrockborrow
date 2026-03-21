@@ -25,3 +25,16 @@
     </div>
     <br><br><a href="/" style="color:#666; text-decoration:none;">홈으로 돌아가기</a>
 </body>
+
+<hr style="border:0; border-top:1px solid #222; margin:40px 0;">
+<h2>🎹 악기 등록 (기타/베이스용)</h2>
+<form action="/admin/add_instrument" method="POST" style="background:#111; padding:20px; border-radius:10px; text-align:left; display:inline-block; width:100%; max-width:400px;">
+    세션: 
+    <select name="session_name" style="width:100%; padding:10px; margin:10px 0;">
+        <option value="Guitar">Guitar</option>
+        <option value="Base">Base</option>
+    </select><br>
+    악기 이름 (예: 기타 1호): <input type="text" name="inst_name" style="width:100%; padding:10px; margin:10px 0;"><br>
+    악기 사진 URL: <input type="text" name="inst_img_url" placeholder="http://..." style="width:100%; padding:10px; margin:10px 0;"><br>
+    <button type="submit" style="width:100%; padding:15px; background:#f39c12; border:none; font-weight:bold;">새 악기 등록</button>
+</form>
