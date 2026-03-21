@@ -2,180 +2,83 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>{{ session_name }} 상세 정보</title>
+    <title>{{ session_name }} - 모여락</title>
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 50px; }
-        .flex-container { display: flex; max-width: 1200px; margin: 0 auto; gap: 30px; }
-        .main-area { flex: 3; background: #111; padding: 30px; border-radius: 15px; border: 1px solid #222; }
-        .sidebar { flex: 1; position: sticky; top: 50px; height: fit-content; }
-        .box { background: #1a1a1a; padding: 25px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; text-align: left; }
-        
-        h1 { color: #f39c12; }
-        h3 { color: #f39c12; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
-        
-        /* 악기 선택 탭 (기타/베이스용) */
-        .inst-selector { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .inst-tab { padding: 10px 20px; background: #222; border: 1px solid #444; cursor: pointer; border-radius: 8px; font-weight: bold; white-space: nowrap; transition: 0.3s; }
-        .inst-tab.active { border-color: #f39c12; color: #f39c12; box-shadow: 0 0 10px rgba(243, 156, 18, 0.2); }
-
-        /* 캘린더 스타일 (24시간 그릿) */
-        .calendar-grid { 
-            display: grid; grid-template-columns: 80px repeat(7, 1fr); 
-            border: 1px solid #222; font-size: 11px; margin-top: 20px;
-        }
-        .grid-header { background: #1a1a1a; padding: 12px; text-align: center; font-weight: bold; border-bottom: 1px solid #333; }
-        .grid-cell { border: 0.5px solid #222; height: 35px; position: relative; cursor: pointer; }
-        .grid-cell:hover { background: #161616; }
-        .time-label { text-align: right; padding-right: 10px; line-height: 35px; color: #555; background: #0a0a0a; font-weight: bold; }
-        .booked-slot { position: absolute; inset: 2px; background: #f39c12; color: #000; font-weight: bold; padding: 3px; border-radius: 4px; font-size: 10px; z-index: 5; overflow: hidden; }
-
-        /* 예약 팝업 모달 */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
-        .modal-content { 
-            background: #1e1e1e; margin: 10% auto; padding: 30px; border-radius: 20px; 
-            width: 500px; border: 1px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.5); text-align: left;
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .close { color: #aaa; font-size: 28px; cursor: pointer; }
-
-        .form-group { margin-bottom: 15px; }
-        .form-label { color: #888; font-size: 0.9em; margin-bottom: 5px; display: block; }
-        .form-input { 
-            width: 100%; background: #111; color: #fff; border: 1px solid #444; 
-            padding: 12px; border-radius: 10px; font-size: 1em; outline: none; box-sizing: border-box;
-        }
-        .form-input:focus { border-color: #f39c12; }
-        
-        .time-picker-flex { display: flex; gap: 10px; }
-        .submit-btn { 
-            width: 100%; background: #f39c12; color: #121212; padding: 15px; border: none; 
-            border-radius: 10px; font-weight: bold; font-size: 1.1em; cursor: pointer; margin-top: 25px;
-        }
+        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; }
+        .wrapper { display: flex; height: 100vh; }
+        .main { flex: 3; padding: 40px; overflow-y: auto; border-right: 1px solid #222; }
+        .sidebar { flex: 1; padding: 40px; background: #050505; }
+        .title { color: {{ color }}; font-size: 2.5em; margin-bottom: 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; background: #111; border: 1px solid #333; border-radius: 8px; cursor: pointer; }
+        .tab.active { border-color: {{ color }}; color: {{ color }}; }
+        .grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); border: 1px solid #222; }
+        .cell { border: 0.5px solid #222; height: 45px; position: relative; }
+        .t-label { text-align: right; padding-right: 10px; font-size: 11px; color: #555; line-height: 45px; }
+        .h-cell { background: #111; text-align: center; font-weight: bold; border-bottom: 2px solid {{ color }}; padding: 15px 0; }
+        .info-box { background: #111; padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; }
+        .edit-btn { background: none; border: 1px solid #444; color: #888; padding: 5px 10px; border-radius: 4px; cursor: pointer; float: right; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }
+        .m-content { background: #1c1c1c; margin: 10% auto; padding: 30px; border-radius: 20px; width: 400px; border: 1px solid #333; }
     </style>
 </head>
 <body>
-    <div class="flex-container">
-        <div class="main-area">
-            <h1 style="color:#f39c12; margin:0 0 30px 0;">🎸 {{ session_name }}</h1>
-            
-            {% if session_name == 'Vocal' %}
-                <div style="padding: 100px 0; color: #555; font-size: 1.2em;">보컬 세션은 별도의 악기 예약 기능이 없습니다.</div>
-            {% else %}
-                {% if instruments %}
-                <div class="inst-selector">
-                    {% for inst in instruments %}
-                    <div class="inst-tab {% if loop.first %}active{% endif %}" onclick="selectInstrument('{{ inst.name }}')">
-                        {{ inst.name }}
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <div class="calendar-grid">
-                    <div class="grid-header">시간</div>
-                    <div class="grid-header">월</div><div class="grid-header">화</div><div class="grid-header">수</div>
-                    <div class="grid-header">목</div><div class="grid-header">금</div><div class="grid-header">토</div><div class="grid-header">일</div>
-
-                    {% for h in range(0, 24) %}
-                        {% set hour_str = "%02d" % h %}
-                        <div class="grid-cell time-label">{{ hour_str }}:00</div>
-                        {% for day in range(7) %}<div class="grid-cell" onclick="openModal('{{ h }}:00')"></div>{% endfor %}
-                        <div class="grid-cell time-label">{{ hour_str }}:30</div>
-                        {% for day in range(7) %}<div class="grid-cell" onclick="openModal('{{ h }}:30')"></div>{% endfor %}
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
-
-        <div class="sidebar">
-            <div class="box leader-box">
-                <h3>👤 파트장 정보</h3>
-                <p><strong>이름:</strong> {{ leader.name }}</p>
-                <p><strong>연락처:</strong> {{ leader.contact }}</p>
-                <p><strong>공지:</strong> {{ leader.notice }}</p>
+    <div class="wrapper">
+        {% if session_name == 'Vocal' %}
+        <div style="width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <h1 style="font-size: 5em; color: {{ color }};">VOCAL</h1>
+            <div class="info-box" style="width:300px; text-align:center;">
+                <p>👤 파트장: <strong>{{ leader.name }}</strong></p>
+                <p>Instagram: {{ leader.instagram }}</p>
             </div>
-
-            {% if user and session_name != 'Vocal' %}
-                <div class="box">
-                    <h3>⏰ 예약하기</h3>
-                    <p>원하는 날짜와 시간을 선택하세요.</p>
-                    <button class="btn-reserve submit-btn" onclick="openModal()" style="width:100%; margin-top:0;">
-                        지금 예약 신청하기
-                    </button>
-                </div>
-            {% elif not user %}
-                <p style="color: #666; font-size: 0.9em;">로그인 후 예약이 가능합니다.</p>
-            {% endif %}
-            
-            <a href="/" style="color: #666; text-decoration: none;">← 홈으로 돌아가기</a>
+            <a href="/" style="color:#444; text-decoration:none;">← 홈으로</a>
         </div>
+        {% else %}
+        <div class="main">
+            <h1 class="title">{{ session_name }}</h1>
+            <div class="tabs">
+                {% for inst in instruments %}
+                <div class="tab {% if loop.first %}active{% endif %}">{{ inst.name }}</div>
+                {% endfor %}
+            </div>
+            <div class="grid">
+                <div class="cell h-cell">시간</div>
+                {% for d in week_days %}<div class="cell h-cell">{{ d }}</div>{% endfor %}
+                {% for h in range(0, 24) %}
+                {% set ts = "%02d" % h %}
+                <div class="cell t-label">{{ ts }}:00</div>{% for d in range(7) %}<div class="cell"></div>{% endfor %}
+                <div class="cell t-label">{{ ts }}:30</div>{% for d in range(7) %}<div class="cell"></div>{% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+        <div class="sidebar">
+            <div class="info-box">
+                {% if is_admin %}<button class="edit-btn" onclick="openEdit()">수정</button>{% endif %}
+                <h3>👤 파트장 정보</h3>
+                <p>이름: {{ leader.name }}</p>
+                <p>인스타: {{ leader.instagram }}</p>
+            </div>
+            <div class="info-box">
+                <h3>📅 일정 등록</h3>
+                <button onclick="document.getElementById('r-modal').style.display='block'" style="width:100%; padding:15px; background:{{ color }}; border:none; color:#000; font-weight:bold; border-radius:10px; cursor:pointer;">새로운 일정 등록</button>
+            </div>
+            <center><a href="/" style="color:#444; text-decoration:none;">← 홈으로</a></center>
+        </div>
+        {% endif %}
     </div>
 
-    <div id="reserveModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 style="margin:0;">새로운 일정 등록</h2>
-                <span class="close" onclick="closeModal()">&times;</span>
-            </div>
-            
-            <form action="/reserve" method="POST">
-                <input type="hidden" name="inst_name" id="modal_inst_name" value="{{ instruments[0].name if instruments else session_name }}">
-                
-                <div class="form-group">
-                    <label class="form-label">날짜 선택</label>
-                    <input type="date" name="date" class="form-input" required>
-                </div>
-
-                <div class="form-group time-picker-flex">
-                    <div style="flex:1;">
-                        <label class="form-label">시작 시간 (24H)</label>
-                        <select name="start_time" id="modal_start_time" class="form-input" style="appearance:none;">
-                            {% for h in range(0, 24) %}
-                            {% set ts = "%02d" % h %}
-                            <option value="{{ ts }}:00">{{ ts }}:00</option>
-                            <option value="{{ ts }}:30">{{ ts }}:30</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div style="flex:1;">
-                        <label class="form-label">종료 시간 (24H)</label>
-                        <select name="end_time" class="form-input" style="appearance:none;">
-                            {% for h in range(0, 24) %}
-                            {% set ts = "%02d" % h %}
-                            <option value="{{ ts }}:00">{{ ts }}:00</option>
-                            <option value="{{ ts }}:30">{{ ts }}:30</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">예약자 정보</label>
-                    <input type="text" class="form-input" value="{{ user }} (자동입력)" readonly style="border-color:#333; color:#666;">
-                </div>
-
-                <button type="submit" class="submit-btn">예약 완료</button>
+    <div id="e-modal" class="modal">
+        <div class="m-content">
+            <h2>파트장 정보 수정</h2>
+            <form action="/admin/setup" method="POST">
+                <input type="hidden" name="target_session" value="{{ session_name }}">
+                <input type="text" name="leader_name" value="{{ leader.name }}" style="width:100%; padding:10px; margin-bottom:10px; background:#000; color:#fff; border:1px solid #333;">
+                <input type="text" name="instagram" value="{{ leader.instagram }}" style="width:100%; padding:10px; margin-bottom:10px; background:#000; color:#fff; border:1px solid #333;">
+                <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; font-weight:bold;">저장</button>
+                <button type="button" onclick="document.getElementById('e-modal').style.display='none'" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">취소</button>
             </form>
         </div>
     </div>
-
-    <script>
-        // 모달창 제어 (열기/닫기)
-        function openModal(startTime) {
-            document.getElementById("reserveModal").style.display = "block";
-            if (startTime) {
-                document.getElementById("modal_start_time").value = startTime;
-            }
-        }
-        function closeModal() { document.getElementById("reserveModal").style.display = "none"; }
-        window.onclick = function(e) { if (e.target == document.getElementById("reserveModal")) closeModal(); }
-
-        // 악기 탭 선택 (기타/베이스용)
-        function selectInstrument(name) {
-            document.querySelectorAll('.inst-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('modal_inst_name').value = name;
-        }
-    </script>
+    <script>function openEdit(){ document.getElementById('e-modal').style.display='block'; }</script>
 </body>
 </html>
