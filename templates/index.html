@@ -2,94 +2,113 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>모여락 공용악기대여</title>
-    <link rel="icon" href="/static/images/moyorak_logo.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모여락 악기 예약 시스템</title>
     <style>
-        body { background-color: #121212; color: #fff; font-family: sans-serif; margin: 0; text-align: center; }
+        body { background-color: #0d0d0d; color: #fff; font-family: 'Pretendard', sans-serif; margin: 0; text-align: center; padding-top: 50px; }
+        .sub-text { color: #888; margin-bottom: 30px; font-size: 0.9em; }
         
-        /* 헤더 스타일 */
-        header { 
-            background-color: #1a1a1a; padding: 15px 30px; display: flex;         
-            align-items: center; justify-content: space-between; border-bottom: 1px solid #333; 
+        /* 세션 버튼 레이아웃 */
+        .btn-container { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 50px; }
+        .session-btn { 
+            background: #222; border: 1px solid #333; color: #fff; padding: 15px 25px; 
+            border-radius: 10px; cursor: pointer; text-decoration: none; font-weight: bold;
+            display: flex; align-items: center; gap: 8px; transition: 0.3s;
         }
-        .header-left { display: flex; align-items: center; }
-        .header-left a.logo-link { margin-right: 20px; }
-        .header-left img { height: 45px; transition: transform 0.2s; }
-        .header-left img:hover { transform: scale(1.05); }
-        .header-title { color: #f39c12; font-size: 1.5em; font-weight: bold; margin: 0; letter-spacing: 1px; }
-
-        .header-right a {
-            color: #ccc; text-decoration: none; margin-left: 15px; padding: 8px 16px;
-            border: 1px solid #555; border-radius: 5px; font-size: 0.9em; font-weight: bold; transition: 0.3s;
-        }
-        .header-right a:hover { background-color: #f39c12; color: #121212; border-color: #f39c12; }
-        .header-right .signup-btn { background-color: #333; color: white; }
-
-        /* 메인 본문 */
-        .hero { padding: 80px 20px; }
-        p { color: #aaa; font-size: 1.2em; margin-bottom: 40px; }
+        .session-btn:hover { background: #333; transform: translateY(-3px); }
         
-        .btn-group a { 
-            display: inline-block; padding: 15px 30px; margin: 10px; 
-            background-color: #333; color: white; text-decoration: none; 
-            border-radius: 8px; font-weight: bold; font-size: 1.1em; transition: 0.3s; 
-            border: 1px solid #555;
-        }
-        .btn-group a:hover { background-color: #f39c12; color: #121212; }
-        .admin-btn { background-color: #e74c3c !important; border-color: #c0392b !important; }
+        /* 관리자 버튼 (주황/빨강 계열) */
+        .admin-btn { background: #e74c3c; border: none; }
+        .admin-btn:hover { background: #c0392b; }
 
-        /* 💥 새로 추가된 바로가기 버튼 스타일 💥 */
-        .shortcut-section { margin-top: 50px; padding-top: 30px; border-top: 1px dashed #333; }
-        .shortcut-section h3 { color: #aaa; font-size: 1.1em; margin-bottom: 20px; }
-        .shortcut-group a {
-            display: inline-block; padding: 12px 25px; margin: 0 10px;
-            background-color: transparent; color: #3498db; text-decoration: none;
-            border-radius: 30px; font-weight: bold; border: 2px solid #3498db; transition: 0.3s;
+        /* 하단 빠른 바로가기 */
+        .divider { border-top: 1px dashed #222; margin: 40px auto; width: 80%; }
+        .quick-links { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .link-btn { 
+            background: transparent; border: 1.5px solid #1e3799; color: #fff; 
+            padding: 12px 25px; border-radius: 30px; text-decoration: none; font-size: 0.9em;
         }
-        .shortcut-group a:hover { background-color: #3498db; color: white; }
+
+        /* 🔐 관리자 전용 팝업창 (모달) */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
+        .modal-content { 
+            background: #1a1a1a; margin: 10% auto; padding: 30px; border-radius: 20px; 
+            width: 400px; border: 1px solid #333; text-align: left;
+        }
+        .modal-input { 
+            width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; 
+            border: 1px solid #333; border-radius: 8px; box-sizing: border-box;
+        }
+        .modal-submit { 
+            width: 100%; padding: 15px; background: #e74c3c; border: none; color: #fff; 
+            font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <div class="header-left">
-            <a href="/" class="logo-link"><img src="/static/images/moyorak_logo.png" alt="홈으로"></a>
-            <div class="header-title">모여락 공용악기대여</div>
-        </div>
-        
-        <div class="header-right">
-            {% if session.get('user') %}
-                <span style="color: #f39c12; margin-right: 15px; font-weight: bold;">{{ session.get('user') }}님 🤘</span>
-                <a href="/logout">로그아웃</a>
-            {% else %}
-                <a href="/login">로그인</a>
-                <a href="/signup" class="signup-btn">회원가입</a>
-            {% endif %}
-        </div>
-    </header>
 
-    <div class="hero">
-        <p>원하는 세션의 악기를 확인하고 대여하세요!</p>
-        
-        <div class="btn-group">
-            <a href="/session/Vocal">🎤 보컬</a> 
-            <a href="/session/Guitar">🎸 기타</a>
-            <a href="/session/Base">🎸 베이스</a>
-            <a href="/session/Drum">🥁 드럼</a>
-            <a href="/session/Keyboard">🎹 키보드</a>
-            
-            {% if session.get('user') == 'admin' %}
-            <a href="/admin/add" class="admin-btn">⚙️ 관리자 악기 등록</a>
-            {% endif %}
-        </div>
+    <p class="sub-text">원하는 세션의 악기를 확인하고 대여하세요!</p>
 
-        <div class="shortcut-section">
-            <h3>🔗 빠른 바로가기</h3>
-            <div class="shortcut-group">
-                <a href="#" target="_blank">📌 공연 선곡 및 일정</a>
-                <a href="https://ddrak.vercel.app/" target="_blank">📌 화요뜨락 홈페이지</a>
-            </div>
-        </div>
+    <div class="btn-container">
+        <a href="/session/Vocal" class="session-btn">🎤 보컬</a>
+        <a href="/session/Guitar" class="session-btn">🎸 기타</a>
+        <a href="/session/Base" class="session-btn">🎸 베이스</a>
+        <a href="/session/Drum" class="session-btn">🥁 드럼</a>
+        <a href="/session/Keyboard" class="session-btn">🎹 키보드</a>
         
+        <button onclick="openAdminModal()" class="session-btn admin-btn">⚙️ 관리자 악기 등록</button>
     </div>
+
+    <div class="divider"></div>
+
+    <p style="color:#888; font-size: 0.9em;">🔗 빠른 바로가기</p>
+    <div class="quick-links">
+        <a href="#" class="link-btn">📌 공연 선곡 및 일정</a>
+        <a href="#" class="link-btn">📌 화요뜨락 홈페이지</a>
+    </div>
+
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-top:0; color:#e74c3c;">⚙️ 파트 정보 수정</h2>
+            <form action="/admin/setup" method="POST">
+                <label style="font-size:0.8em; color:#666;">수정할 세션 선택</label>
+                <select name="target_session" class="modal-input">
+                    <option value="Vocal">Vocal</option>
+                    <option value="Guitar">Guitar</option>
+                    <option value="Base">Base</option>
+                    <option value="Drum">Drum</option>
+                    <option value="Keyboard">Keyboard</option>
+                </select>
+                
+                <input type="text" name="leader_name" class="modal-input" placeholder="파트장 이름 입력" required>
+                <input type="text" name="instagram" class="modal-input" placeholder="인스타 계정 (@ 없이)" required>
+                
+                <div style="margin: 10px 0; font-size: 0.85em;">
+                    <input type="checkbox" name="is_active" id="active_check" checked>
+                    <label for="active_check">대여 기능 활성화 (드럼/키보드용)</label>
+                </div>
+
+                <button type="submit" class="modal-submit">설정 저장하기</button>
+                <button type="button" onclick="closeAdminModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">닫기</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 관리자 모달 제어 함수
+        function openAdminModal() {
+            document.getElementById('adminModal').style.display = 'block';
+        }
+        function closeAdminModal() {
+            document.getElementById('adminModal').style.display = 'none';
+        }
+        // 배경 클릭 시 닫기
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('adminModal')) {
+                closeAdminModal();
+            }
+        }
+    </script>
+
 </body>
 </html>
