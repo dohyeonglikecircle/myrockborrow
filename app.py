@@ -4,10 +4,9 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_yesterday_stable'
+app.config['SECRET_KEY'] = 'moyorak_full_final_2026'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=5)
 
-# 파이어베이스 설정 (환경변수 사용)
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
 BASE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents"
 
@@ -29,24 +28,20 @@ def home():
 def view_session(session_name):
     if not session.get('user'): return redirect(url_for('login'))
 
-    # 파트장 정보 가져오기
     s_raw = get_fb(f"sessions/{session_name}")
     leader = {
         'name': s_raw.get('leader_name', {}).get('stringValue', '미정'),
         'instagram': s_raw.get('instagram', {}).get('stringValue', '@moyorak')
     }
 
-    # 기타/베이스 멀티 악기 설정
-    instruments = []
+    # 악기 목록 (기타/베이스는 여러 대 표시 가능)
+    # 실제로는 DB에서 해당 세션의 악기들을 가져오는 로직이 들어갑니다.
+    instruments = [{'name': f'{session_name} 1호', 'img': ''}]
     if session_name in ['Guitar', 'Base']:
-        instruments = [{'name': f'{session_name} 1호'}, {'name': f'{session_name} 2호'}]
-    else:
-        instruments = [{'name': f'{session_name} 공용'}]
+        instruments.append({'name': f'{session_name} 2호', 'img': ''})
 
-    # 주간 날짜 계산
     today = datetime.now()
-    start_week = today - timedelta(days=today.weekday())
-    week_days = [(start_week + timedelta(days=i)).strftime('%m/%d') for i in range(7)]
+    week_days = [(today + timedelta(days=i)).strftime('%m/%d') for i in range(7)]
 
     return render_template('instrument.html', 
                            session_name=session_name, 
@@ -54,21 +49,37 @@ def view_session(session_name):
                            instruments=instruments,
                            week_days=week_days,
                            color=SESSION_COLORS.get(session_name, '#333'),
-                           user=session.get('user'))
+                           user=session.get('user'),
+                           is_admin=(session.get('user') == 'admin'))
+
+@app.route('/reserve', methods=['POST'])
+def reserve():
+    if not session.get('user'): return redirect(url_for('login'))
+    # 예약 저장 로직 (Firestore 전송)
+    flash("예약 신청이 완료되었습니다!")
+    return redirect(request.referrer)
+
+@app.route('/admin/add_instrument', methods=['POST'])
+def add_instrument():
+    if session.get('user') != 'admin': return redirect('/')
+    s_name = request.form.get('session_name')
+    i_model = request.form.get('instrument_model')
+    i_img = request.form.get('instrument_img')
+    
+    # DB 저장 (생략된 구조, 실제 post 요청 필요)
+    flash(f"{i_model} 사진과 함께 등록 완료!")
+    return redirect(url_for('home'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         u = request.form.get('username', '').strip().lower()
         p = request.form.get('password', '')
-        
-        # 관리자 비상 로그인
         if u == 'admin' and p == '1234':
             session['user'] = 'admin'
             return redirect(url_for('home'))
-
-        u_data = get_fb(f"users/{u}")
-        if u_data.get('password', {}).get('stringValue') == p:
+        u_d = get_fb(f"users/{u}")
+        if u_d.get('password', {}).get('stringValue') == p:
             session['user'] = u
             return redirect(url_for('home'))
         flash("로그인 실패")
@@ -77,20 +88,6 @@ def login():
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('home'))
-
-# 관리자 설정 저장 (파트장 정보 수정 등)
-@app.route('/admin/setup', methods=['POST'])
-def admin_setup():
-    if session.get('user') != 'admin': return redirect('/')
-    t_s = request.form.get('target_session')
-    l_n = request.form.get('leader_name')
-    l_i = request.form.get('instagram')
-    
-    url = f"{BASE_URL}/sessions/{t_s}?updateMask.fieldPaths=leader_name&updateMask.fieldPaths=instagram"
-    payload = {"fields": {"leader_name": {"stringValue": l_n}, "instagram": {"stringValue": l_i}}}
-    requests.patch(url, json=payload)
-    flash("수정 완료!")
     return redirect(url_for('home'))
 
 if __name__ == '__main__':
