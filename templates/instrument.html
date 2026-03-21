@@ -13,12 +13,8 @@
         .inst-card.active { border-color: {{ color }}; background: rgba(255,255,255,0.05); }
         .inst-card img { width: 100%; height: 90px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; }
         .del-btn { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; z-index: 10; font-weight: bold; }
-        
-        /* 🚫 달력 칸 클릭 방지 */
         .grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); border: 1px solid #222; pointer-events: none; }
         .cell { border: 0.5px solid #222; height: 45px; position: relative; background: #000; }
-        
-        /* 🗓️ 예약 바 스타일 */
         .res-bar { 
             position: absolute; left: 2px; right: 2px; 
             background: {{ color }}; color: #000; 
@@ -27,7 +23,6 @@
             display: flex; align-items: center; justify-content: center;
             text-align: center; white-space: nowrap; text-overflow: ellipsis;
         }
-
         .info-box { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; position: relative; }
         .edit-trigger { position: absolute; top: 15px; right: 15px; font-size: 11px; color: #555; cursor: pointer; border: 1px solid #333; padding: 3px 6px; border-radius: 4px; }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); pointer-events: auto; }
@@ -68,14 +63,13 @@
             <button onclick="openReserveModal()" style="width:100%; padding:20px; background:{{ color }}; border:none; color:#000; font-weight:bold; border-radius:15px; cursor:pointer; font-size:1.1em;">🗓️ 새로운 일정 등록</button>
         </div>
     </div>
-
     <div id="reserveModal" class="modal"><div class="m-content">
         <h2>새로운 일정 등록</h2>
         <form action="/reserve" method="POST">
             <input type="hidden" name="session_name" value="{{ session_name }}">
             <input type="hidden" name="inst_name" id="selectedInstName" value="{{ instruments[0].name if instruments else '' }}">
             <input type="hidden" name="date" id="reserveDate" required>
-            <div id="datePickList" style="margin:10px 0; max-height:180px; overflow-y:auto;"></div>
+            <div id="datePickList" style="margin:10px 0; max-height:180px; overflow-y:auto; padding-right:5px;"></div>
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <div style="flex:1;">
                     <select name="start_time" class="modal-input">{% for h in range(0, 24) %}{% set ts = "%02d" % h %}<option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>{% endfor %}</select>
@@ -88,7 +82,6 @@
             <button type="button" onclick="closeReserveModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">닫기</button>
         </form>
     </div></div>
-
     <div id="editModal" class="modal"><div class="m-content">
         <h2>파트장 정보 수정</h2>
         <form action="/admin/setup" method="POST">
@@ -99,15 +92,9 @@
             <button type="button" onclick="closeEditModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">취소</button>
         </form>
     </div></div>
-
     <script>
         const allRes = {{ reservations | tojson }};
-        function selectInst(el, name) {
-            document.querySelectorAll('.inst-card').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
-            document.getElementById('selectedInstName').value = name;
-            drawReservations(name);
-        }
+        function selectInst(el, name) { document.querySelectorAll('.inst-card').forEach(c => c.classList.remove('active')); el.classList.add('active'); document.getElementById('selectedInstName').value = name; drawReservations(name); }
         function drawReservations(instName) {
             document.querySelectorAll('.res-bar').forEach(b => b.remove());
             allRes.forEach(r => {
@@ -130,7 +117,7 @@
             const days = {{ week_days | tojson }};
             days.forEach((d, i) => {
                 const btn = document.createElement('div'); btn.className = 'date-item' + (i===0?' selected':'');
-                btn.innerText = d;
+                btn.innerText = d[5:];
                 btn.onclick = () => { document.querySelectorAll('.date-item').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('reserveDate').value = d; };
                 if(i===0) document.getElementById('reserveDate').value = d;
                 container.appendChild(btn);
