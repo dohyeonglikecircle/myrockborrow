@@ -4,12 +4,12 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_multi_inst_2026'
+app.config['SECRET_KEY'] = 'moyorak_final_v5_2026'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=3)
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
 BASE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents"
 
-# 세션별 색상 지정
 SESSION_COLORS = {
     'Guitar': '#e67e22', 'Base': '#f1c40f', 'Drum': '#3498db', 'Keyboard': '#9b59b6', 'Vocal': '#2ecc71'
 }
@@ -17,33 +17,40 @@ SESSION_COLORS = {
 def get_fb(path):
     try:
         res = requests.get(f"{BASE_URL}/{path}", timeout=5)
-        return res.json() if res.status_code == 200 else {}
+        if res.status_code == 200:
+            return res.json().get('fields', {})
     except: return {}
+    return {}
+
+@app.route('/')
+def home():
+    return render_template('index.html', user=session.get('user'))
 
 @app.route('/session/<session_name>')
 def view_session(session_name):
-    if not session.get('user'): return redirect(url_for('login'))
+    if not session.get('user'):
+        return redirect(url_for('login'))
 
-    # 1. 파트장 정보 가져오기
-    s_raw = get_fb(f"sessions/{session_name}").get('fields', {})
+    # 1. 파트장 정보 (sessions 컬렉션)
+    s_raw = get_fb(f"sessions/{session_name}")
     leader = {
         'name': s_raw.get('leader_name', {}).get('stringValue', '미정'),
-        'instagram': s_raw.get('instagram', {}).get('stringValue', '@moyorak')
+        'instagram': s_raw.get('instagram', {}).get('stringValue', '@moyorak'),
+        'is_active': s_raw.get('is_active', {}).get('booleanValue', True)
     }
 
-    # 2. 악기 목록 가져오기 (기타, 베이스는 여러 대)
-    # 실제 운영 시에는 'instruments' 컬렉션에서 해당 세션으로 필터링된 목록을 가져옵니다.
+    # 2. 악기 목록 로직 (Guitar, Base는 여러 대)
     instruments = []
     if session_name in ['Guitar', 'Base']:
-        # 예시: 관리자가 등록한 악기들 (실제로는 DB 반복문 처리)
+        # 임시 데이터 (나중에 DB 쿼리로 대체 가능)
         instruments = [
-            {'id': 'inst1', 'name': f'{session_name} 1호 (펜더)', 'img': 'url1'},
-            {'id': 'inst2', 'name': f'{session_name} 2호 (깁슨)', 'img': 'url2'}
+            {'name': f'{session_name} 1호', 'img': ''},
+            {'name': f'{session_name} 2호', 'img': ''}
         ]
     elif session_name in ['Drum', 'Keyboard']:
-        instruments = [{'id': 'inst_single', 'name': f'{session_name} 공용', 'img': 'url'}]
+        instruments = [{'name': f'{session_name} 공용', 'img': ''}]
 
-    # 3. 주간 날짜 계산
+    # 3. 주간 날짜 (상단 날짜 표시용)
     today = datetime.now()
     start_week = today - timedelta(days=today.weekday())
     week_days = [(start_week + timedelta(days=i)).strftime('%m/%d') for i in range(7)]
@@ -55,23 +62,40 @@ def view_session(session_name):
                            week_days=week_days,
                            color=SESSION_COLORS.get(session_name, '#333'))
 
-# --- [추가] 관리자 악기 등록 API (사진 URL 포함) ---
-@app.route('/admin/add_instrument', methods=['POST'])
-def add_instrument():
+# --- 관리자 설정 (사이트 내 수정) ---
+@app.route('/admin/setup', methods=['GET', 'POST'])
+def admin_setup():
     if session.get('user') != 'admin': return redirect('/')
-    
-    s_name = request.form.get('session_name') # Guitar, Base 등
-    i_name = request.form.get('inst_name')
-    i_img = request.form.get('inst_img_url') # 사진 파일 대신 URL로 관리 권장
-    
-    payload = {
-        "fields": {
-            "name": {"stringValue": i_name},
-            "image_url": {"stringValue": i_img},
-            "session": {"stringValue": s_name},
-            "is_available": {"booleanValue": True}
-        }
-    }
-    requests.post(f"{BASE_URL}/instruments", json=payload)
-    flash(f"{i_name} 등록 완료!")
-    return redirect(url_for('admin_setup'))
+    if request.method == 'POST':
+        t_s = request.form.get('target_session')
+        l_n = request.form.get('leader_name')
+        l_i = request.form.get('instagram')
+        act = True if request.form.get('is_active') == 'on' else False
+        
+        url = f"{BASE_URL}/sessions/{t_s}?updateMask.fieldPaths=leader_name&updateMask.fieldPaths=instagram&updateMask.fieldPaths=is_active"
+        payload = {"fields": {"leader_name": {"stringValue": l_n}, "instagram": {"stringValue": l_i}, "is_active": {"booleanValue": act}}}
+        requests.patch(url, json=payload)
+        flash("설정 저장 완료!")
+        return redirect(url_for('admin_setup'))
+    return render_template('admin_setup.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        u = request.form.get('username', '').strip().lower()
+        p = request.form.get('password', '')
+        u_d = get_fb(f"users/{u}")
+        if u_d.get('password', {}).get('stringValue') == p:
+            session.permanent = True
+            session['user'] = u
+            return redirect(url_for('home'))
+        flash("로그인 실패")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
