@@ -12,22 +12,15 @@
         .inst-card { background: #111; border: 1.5px solid #333; padding: 12px; border-radius: 15px; min-width: 150px; text-align: center; cursor: pointer; position: relative; }
         .inst-card.active { border-color: {{ color }}; background: rgba(255,255,255,0.05); }
         .inst-card img { width: 100%; height: 90px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; }
-        .del-btn { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; z-index: 10; font-weight: bold; }
+        .del-btn { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-weight: bold; }
         .grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); border: 1px solid #222; pointer-events: none; }
         .cell { border: 0.5px solid #222; height: 45px; position: relative; background: #000; }
-        .res-bar { 
-            position: absolute; left: 2px; right: 2px; 
-            background: {{ color }}; color: #000; 
-            font-size: 11px; font-weight: 800; padding: 4px 2px; 
-            border-radius: 4px; z-index: 10; overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
-            text-align: center; white-space: nowrap; text-overflow: ellipsis;
-        }
+        .res-bar { position: absolute; left: 2px; right: 2px; background: {{ color }}; color: #000; font-size: 11px; font-weight: 800; padding: 4px 2px; border-radius: 4px; z-index: 10; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; }
         .info-box { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; position: relative; }
         .edit-trigger { position: absolute; top: 15px; right: 15px; font-size: 11px; color: #555; cursor: pointer; border: 1px solid #333; padding: 3px 6px; border-radius: 4px; }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); pointer-events: auto; }
         .m-content { background: #1c1c1c; margin: 5% auto; padding: 35px; border-radius: 25px; width: 450px; border: 1px solid #333; }
-        .modal-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
+        .modal-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; }
         .date-item { padding: 12px; border: 1px solid #333; margin-bottom: 8px; cursor: pointer; text-align: center; border-radius: 10px; }
         .date-item.selected { border-color: {{ color }}; background: rgba(255,255,255,0.05); color: {{ color }}; font-weight: bold; }
     </style>
@@ -40,7 +33,7 @@
                 {% for inst in instruments %}
                 <div class="inst-card {% if loop.first %}active{% endif %}" onclick="selectInst(this, '{{ inst.name }}')">
                     {% if is_admin and inst.id != 'default' %}<button class="del-btn" onclick="event.stopPropagation(); if(confirm('삭제?')) location.href='/admin/delete_instrument/{{ inst.id }}'">×</button>{% endif %}
-                    {% if inst.img %}<img src="{{ inst.img }}" alt="악기">{% else %}<div style="height:90px; background:#0a0a0a; border-radius:8px; line-height:90px; font-size:11px; color:#333;">NO IMAGE</div>{% endif %}
+                    {% if inst.img %}<img src="{{ inst.img }}">{% else %}<div style="height:90px; background:#0a0a0a; border-radius:8px; line-height:90px; font-size:11px; color:#333;">NO IMAGE</div>{% endif %}
                     <span>{{ inst.name }}</span>
                 </div>
                 {% endfor %}
@@ -69,17 +62,13 @@
             <input type="hidden" name="session_name" value="{{ session_name }}">
             <input type="hidden" name="inst_name" id="selectedInstName" value="{{ instruments[0].name if instruments else '' }}">
             <input type="hidden" name="date" id="reserveDate" required>
-            <div id="datePickList" style="margin:10px 0; max-height:180px; overflow-y:auto; padding-right:5px;"></div>
+            <div id="datePickList" style="margin:10px 0; max-height:180px; overflow-y:auto;"></div>
             <div style="display:flex; gap:10px; margin-top:20px;">
-                <div style="flex:1;">
-                    <select name="start_time" class="modal-input">{% for h in range(0, 24) %}{% set ts = "%02d" % h %}<option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>{% endfor %}</select>
-                </div>
-                <div style="flex:1;">
-                    <select name="end_time" class="modal-input">{% for h in range(0, 24) %}{% set ts = "%02d" % h %}<option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>{% endfor %}</select>
-                </div>
+                <div style="flex:1;"><select name="start_time" class="modal-input">{% for h in range(0, 24) %}{% set ts = "%02d" % h %}<option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>{% endfor %}</select></div>
+                <div style="flex:1;"><select name="end_time" class="modal-input">{% for h in range(0, 24) %}{% set ts = "%02d" % h %}<option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>{% endfor %}</select></div>
             </div>
             <button type="submit" style="width:100%; padding:18px; background:{{ color }}; border:none; font-weight:bold; margin-top:30px; border-radius:12px; cursor:pointer; color:#000;">예약 신청 완료</button>
-            <button type="button" onclick="closeReserveModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">닫기</button>
+            <button type="button" onclick="closeReserveModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
         </form>
     </div></div>
     <div id="editModal" class="modal"><div class="m-content">
@@ -88,7 +77,7 @@
             <input type="hidden" name="target_session" value="{{ session_name }}">
             <input type="text" name="leader_name" class="modal-input" value="{{ leader.name }}" required>
             <input type="text" name="instagram" class="modal-input" value="{{ leader.instagram }}" required>
-            <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; color:#000; font-weight:bold; border-radius:10px; margin-top:15px;">정보 저장하기</button>
+            <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; color:#000; font-weight:bold; border-radius:10px;">저장</button>
             <button type="button" onclick="closeEditModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">취소</button>
         </form>
     </div></div>
@@ -102,8 +91,7 @@
                     const startCell = document.getElementById(`cell-${r.date}-${r.start.replace(':','')}`);
                     if (startCell) {
                         const bar = document.createElement('div');
-                        bar.className = 'res-bar';
-                        bar.innerText = r.user;
+                        bar.className = 'res-bar'; bar.innerText = r.user;
                         const startMin = parseInt(r.start.split(':')[0])*60 + parseInt(r.start.split(':')[1]);
                         const endMin = parseInt(r.end.split(':')[0])*60 + parseInt(r.end.split(':')[1]);
                         bar.style.height = ((endMin - startMin) / 30 * 45 - 4) + 'px';
@@ -117,7 +105,7 @@
             const days = {{ week_days | tojson }};
             days.forEach((d, i) => {
                 const btn = document.createElement('div'); btn.className = 'date-item' + (i===0?' selected':'');
-                btn.innerText = d[5:];
+                btn.innerText = d.substring(5);
                 btn.onclick = () => { document.querySelectorAll('.date-item').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); document.getElementById('reserveDate').value = d; };
                 if(i===0) document.getElementById('reserveDate').value = d;
                 container.appendChild(btn);
