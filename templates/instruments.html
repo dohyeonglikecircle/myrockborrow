@@ -2,62 +2,47 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>{{ session_name }} 대여 시스템</title>
+    <title>{{ session_name }} 상세 정보</title>
     <style>
-        body { background: #121212; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; }
-        .grid-container { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; max-width: 1200px; margin: auto; }
-        
-        /* 파트장 정보 섹션 */
-        .sidebar { background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; height: fit-content; }
-        .leader-badge { color: #f39c12; font-weight: bold; font-size: 1.2em; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; }
-        
-        /* 악기 및 달력 섹션 */
-        .main-content { background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; }
-        .calendar-box { background: #252525; padding: 20px; border-radius: 8px; margin-top: 20px; min-height: 200px; border: 1px dashed #444; }
-        
-        .btn-reserve { background: #f39c12; color: #000; padding: 12px 24px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
-        .btn-reserve:hover { background: #e67e22; }
+        body { background: #121212; color: #eee; font-family: sans-serif; margin: 0; padding: 40px; }
+        .container { max-width: 900px; margin: auto; background: #1e1e1e; padding: 30px; border-radius: 15px; border: 1px solid #333; }
+        .header { border-bottom: 2px solid #f39c12; padding-bottom: 15px; margin-bottom: 30px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .box { background: #252525; padding: 20px; border-radius: 10px; border: 1px solid #444; }
+        h2 { color: #f39c12; margin-top: 0; }
+        .btn-reserve { display: block; background: #f39c12; color: #121212; padding: 15px; text-decoration: none; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 20px; }
+        .calendar-temp { margin-top: 20px; border: 1px dashed #555; height: 150px; display: flex; align-items: center; justify-content: center; color: #888; }
     </style>
 </head>
 <body>
-    <header style="text-align:center; margin-bottom:30px;">
-        <h1 style="color:#f39c12;">🎸 {{ session_name }} 세션 대여 현황</h1>
-        <a href="/" style="color:#888; text-decoration:none;">[ 홈으로 돌아가기 ]</a>
-    </header>
-
-    <div class="grid-container">
-        <div class="sidebar">
-            <div class="leader-badge">👤 파트장 정보</div>
-            <p><strong>이름:</strong> {{ leader.name }}</p>
-            <p><strong>연락처:</strong> {{ leader.contact }}</p>
-            <div style="margin-top:20px; color:#aaa; font-size:0.9em;">
-                <strong>📢 파트 공지:</strong><br>{{ leader.notice }}
-            </div>
+    <div class="container">
+        <div class="header">
+            <h1>🎸 {{ session_name }} 세션 대여 및 정보</h1>
+            <a href="/" style="color: #888; text-decoration: none;">← 홈으로</a>
         </div>
 
-        <div class="main-content">
-            <h3>🎹 보유 악기 목록</h3>
-            <div style="background:#252525; padding:15px; border-radius:8px;">
-                {% if session_name == 'Vocal' %}
-                    <p>보컬 세션은 개인 장비를 사용합니다.</p>
-                {% else %}
-                    <p>등록된 악기: <strong>{{ session_name }} 공용 1호</strong> (대여가능)</p>
-                {% endif %}
+        <div class="info-grid">
+            <div class="box">
+                <h2>👤 파트장 정보</h2>
+                <p><strong>이름:</strong> {{ leader.name }}</p>
+                <p><strong>연락처:</strong> {{ leader.contact }}</p>
+                <p><strong>공지:</strong> {{ leader.notice }}</p>
             </div>
 
-            <div class="calendar-box">
-                <h4>📅 예약 시간표</h4>
-                <p style="color:#888; font-size:0.8em;">(이곳에 달력 라이브러리나 시간표가 들어갑니다)</p>
-                </div>
-
-            {% if user and session_name != 'Vocal' %}
-            <form action="/reserve" method="POST">
-                <input type="hidden" name="session" value="{{ session_name }}">
-                <button type="submit" class="btn-reserve">지금 예약 신청하기</button>
-            </form>
-            {% elif not user %}
-            <p style="text-align:center; color:#e74c3c; margin-top:20px;">⚠️ 로그인이 필요합니다.</p>
-            {% endif %}
+            <div class="box">
+                <h2>🎹 악기 및 예약</h2>
+                {% if session_name == 'Vocal' %}
+                    <p>보컬 파트는 개인 장비를 사용합니다.</p>
+                {% else %}
+                    <p>현재 대여 가능 악기: <strong>{{ session_name }} 공용 1호</strong></p>
+                    <div class="calendar-temp">📅 예약 달력 준비 중</div>
+                    {% if user %}
+                        <a href="#" class="btn-reserve">지금 예약하기</a>
+                    {% else %}
+                        <p style="color: #e74c3c; font-size: 0.9em; margin-top: 15px;">⚠️ 로그인이 필요합니다.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
         </div>
     </div>
 </body>
