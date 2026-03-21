@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_final_full_v17'
+app.config['SECRET_KEY'] = 'moyorak_final_format_fix_v18'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=5)
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
@@ -14,12 +14,11 @@ SESSION_COLORS = {
     'Guitar': '#e67e22', 'Base': '#f1c40f', 'Drum': '#3498db', 'Keyboard': '#9b59b6', 'Vocal': '#2ecc71'
 }
 
-# 🎸 화면 표시용 이름 매핑 (DB는 Base, 화면은 Bass)
-SESSION_DISPLAY_NAMES = {
-    'Vocal': '보컬', 'Guitar': '기타', 'Base': '베이스(Bass)', 'Drum': '드럼', 'Keyboard': '키보드'
+# 🎸 세션 이름 -> 약자 변환 맵 (달력 표시용)
+SESSION_MAP = {
+    'Vocal': 'V', 'Guitar': 'G', 'Base': 'B', 'Drum': 'D', 'Keyboard': 'K',
+    '보컬': 'V', '기타': 'G', '베이스': 'B', '드럼': 'D', '키보드': 'K'
 }
-
-SESSION_MAP = {'Vocal': 'V', 'Guitar': 'G', 'Base': 'B', 'Drum': 'D', 'Keyboard': 'K'}
 
 def get_fb(path):
     try:
@@ -50,7 +49,12 @@ def signup():
         requests.patch(f"{BASE_URL}/users/{u_id}", json=payload)
         flash("회원가입 완료!")
         return redirect(url_for('login'))
-    gens = [str(int(g)) if g % 1 == 0 else str(g) for g in [x * 0.5 for x in range(38, 59)]]
+    
+    gens = []
+    curr = 19.0
+    while curr <= 29.0:
+        gens.append(str(int(curr)) if curr % 1 == 0 else str(curr))
+        curr += 0.5
     return render_template('signup.html', generations=gens)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -61,12 +65,15 @@ def login():
         if u == 'admin' and p == '1234':
             session['user'] = 'admin'
             return redirect(url_for('home'))
+        
         u_d = get_fb(f"users/{u}")
         if u_d.get('password', {}).get('stringValue') == p:
             session['user'] = u
             session['user_name'] = u_d.get('name', {}).get('stringValue')
             session['user_gen'] = u_d.get('generation', {}).get('stringValue')
-            session['user_session'] = u_d.get('session', {}).get('stringValue')
+            # 가입할 때 선택한 세션 이름을 가져옴
+            raw_s = u_d.get('session', {}).get('stringValue', '')
+            session['user_session_short'] = SESSION_MAP.get(raw_s, 'X')
             return redirect(url_for('home'))
         flash("로그인 실패")
     return render_template('login.html')
@@ -74,26 +81,35 @@ def login():
 @app.route('/session/<session_name>')
 def view_session(session_name):
     if not session.get('user'): return redirect(url_for('login'))
+    
     s_raw = get_fb(f"sessions/{session_name}")
     leader = {'name': s_raw.get('leader_name', {}).get('stringValue', '미정'), 'instagram': s_raw.get('instagram', {}).get('stringValue', '@moyorak')}
+    
     all_docs = get_fb_collection("instruments")
     instruments = []
     for doc in all_docs:
         f = doc.get('fields', {})
         if f.get('session', {}).get('stringValue') == session_name:
             instruments.append({'id': doc.get('name').split('/')[-1], 'name': f.get('model_name', {}).get('stringValue', '이름 없음'), 'img': f.get('image_url', {}).get('stringValue', '')})
+    
     if not instruments and session_name != 'Vocal':
         instruments = [{'name': f'{session_name} 공용', 'img': '', 'id': 'default'}]
+        
     res_docs = get_fb_collection("reservations")
     reservations = []
     for d in res_docs:
         f = d.get('fields', {})
         if f.get('session', {}).get('stringValue') == session_name:
-            reservations.append({'user': f.get('user_display', {}).get('stringValue'), 'inst': f.get('inst_name', {}).get('stringValue'), 'date': f.get('date', {}).get('stringValue'), 'start': f.get('start_time', {}).get('stringValue'), 'end': f.get('end_time', {}).get('stringValue')})
+            reservations.append({
+                'user': f.get('user_display', {}).get('stringValue'),
+                'inst': f.get('inst_name', {}).get('stringValue'),
+                'date': f.get('date', {}).get('stringValue'),
+                'start': f.get('start_time', {}).get('stringValue'),
+                'end': f.get('end_time', {}).get('stringValue')
+            })
+
     today = datetime.now()
     week_days = [(today + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
-    
-    # Bass로 표시하기 위한 display_name
     display_name = 'Bass' if session_name == 'Base' else session_name
     
     return render_template('instrument.html', session_name=session_name, display_name=display_name, leader=leader, instruments=instruments, week_days=week_days, reservations=reservations, color=SESSION_COLORS.get(session_name, '#333'), user=session.get('user'), is_admin=(session.get('user') == 'admin'))
@@ -101,9 +117,21 @@ def view_session(session_name):
 @app.route('/reserve', methods=['POST'])
 def reserve():
     if not session.get('user'): return redirect(url_for('login'))
-    gen = session.get('user_gen', ''); s_short = SESSION_MAP.get(session.get('user_session', ''), ''); name = session.get('user_name', '')
+    
+    # 🚀 예약자 표시 형식: 기수 + 세션약자 + 이름 (예: 28K 조도형)
+    gen = session.get('user_gen', '')
+    s_short = session.get('user_session_short', 'X')
+    name = session.get('user_name', '')
     u_display = f"{gen}{s_short} {name}"
-    payload = {"fields": {"session": {"stringValue": request.form.get('session_name')}, "inst_name": {"stringValue": request.form.get('inst_name')}, "date": {"stringValue": request.form.get('date')}, "start_time": {"stringValue": request.form.get('start_time')}, "end_time": {"stringValue": request.form.get('end_time')}, "user_display": {"stringValue": u_display}}}
+    
+    payload = {"fields": {
+        "session": {"stringValue": request.form.get('session_name')},
+        "inst_name": {"stringValue": request.form.get('inst_name')},
+        "date": {"stringValue": request.form.get('date')},
+        "start_time": {"stringValue": request.form.get('start_time')},
+        "end_time": {"stringValue": request.form.get('end_time')},
+        "user_display": {"stringValue": u_display}
+    }}
     requests.post(f"{BASE_URL}/reservations", json=payload)
     return redirect(request.referrer)
 
