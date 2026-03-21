@@ -9,17 +9,17 @@
         .main { flex: 3; padding: 40px; border-right: 1px solid #222; }
         .sidebar { flex: 1; padding: 40px; background: #050505; position: sticky; top: 0; height: 100vh; }
         .inst-tabs { display: flex; gap: 15px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 10px; }
-        .inst-card { background: #111; border: 1.5 solid #333; padding: 12px; border-radius: 15px; min-width: 150px; text-align: center; cursor: pointer; position: relative; }
+        .inst-card { background: #111; border: 1.5px solid #333; padding: 12px; border-radius: 15px; min-width: 150px; text-align: center; cursor: pointer; position: relative; }
         .inst-card.active { border-color: {{ color }}; background: rgba(255,255,255,0.05); }
         .inst-card img { width: 100%; height: 90px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; }
-        .del-btn { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-weight: bold; }
+        .del-btn { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; z-index: 10; font-weight: bold; }
         .grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); border: 1px solid #222; }
         .cell { border: 0.5px solid #222; height: 45px; }
         .info-box { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; position: relative; }
-        .edit-btn { position: absolute; top: 15px; right: 15px; font-size: 11px; color: #555; cursor: pointer; border: 1px solid #333; padding: 3px 6px; border-radius: 4px; }
+        .edit-trigger { position: absolute; top: 15px; right: 15px; font-size: 11px; color: #555; cursor: pointer; border: 1px solid #333; padding: 3px 6px; border-radius: 4px; }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
         .m-content { background: #1c1c1c; margin: 10% auto; padding: 35px; border-radius: 25px; width: 400px; border: 1px solid #333; }
-        .modal-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; }
+        .modal-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -30,9 +30,9 @@
                 {% for inst in instruments %}
                 <div class="inst-card {% if loop.first %}active{% endif %}" onclick="selectInst(this, '{{ inst.name }}')">
                     {% if is_admin and inst.id != 'default' %}
-                    <button class="del-btn" onclick="event.stopPropagation(); if(confirm('삭제?')) location.href='/admin/delete_instrument/{{ inst.id }}'">×</button>
+                    <button class="del-btn" onclick="event.stopPropagation(); if(confirm('삭제할까요?')) location.href='/admin/delete_instrument/{{ inst.id }}'">×</button>
                     {% endif %}
-                    {% if inst.img %}<img src="{{ inst.img }}" alt="img">{% else %}<div style="height:90px; background:#0a0a0a; border-radius:8px; line-height:90px; font-size:11px; color:#333;">NO IMAGE</div>{% endif %}
+                    {% if inst.img %}<img src="{{ inst.img }}" alt="악기">{% else %}<div style="height:90px; background:#0a0a0a; border-radius:8px; line-height:90px; font-size:11px; color:#333;">NO IMAGE</div>{% endif %}
                     <span>{{ inst.name }}</span>
                 </div>
                 {% endfor %}
@@ -44,36 +44,32 @@
         </div>
         <div class="sidebar">
             <div class="info-box">
-                {% if is_admin %}<span class="edit-btn" onclick="openEditModal()">수정</span>{% endif %}
+                {% if is_admin %}<span class="edit-trigger" onclick="openEditModal()">수정</span>{% endif %}
                 <h3>👤 파트장 정보</h3>
                 <p><strong>이름:</strong> {{ leader.name }}</p>
-                <p><strong>인스타:</strong> {{ leader.instagram }}</p>
+                <p><strong>인스타:</strong> <span style="color:{{ color }};">{{ leader.instagram }}</span></p>
             </div>
-            <button onclick="openReserveModal()" style="width:100%; padding:20px; background:{{ color }}; border:none; font-weight:bold; border-radius:15px; cursor:pointer;">🗓️ 예약하기</button>
-            <center><br><a href="/" style="color:#444; text-decoration:none; font-size:0.8em;">← 홈으로</a></center>
+            <button onclick="openReserveModal()" style="width:100%; padding:20px; background:{{ color }}; border:none; font-weight:bold; border-radius:15px; cursor:pointer; color:#000;">🗓️ 예약하기</button>
         </div>
     </div>
-
     <div id="editModal" class="modal"><div class="m-content">
-        <h2>파트장 수정</h2>
+        <h2>파트장 정보 수정</h2>
         <form action="/admin/setup" method="POST">
             <input type="hidden" name="target_session" value="{{ session_name }}">
-            <input type="text" name="leader_name" class="modal-input" value="{{ leader.name }}">
-            <input type="text" name="instagram" class="modal-input" value="{{ leader.instagram }}">
-            <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; font-weight:bold; border-radius:10px;">저장</button>
-            <button type="button" onclick="closeEditModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
+            <input type="text" name="leader_name" class="modal-input" value="{{ leader.name }}" required>
+            <input type="text" name="instagram" class="modal-input" value="{{ leader.instagram }}" required>
+            <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; color:#000; font-weight:bold; border-radius:10px; margin-top:15px;">정보 저장하기</button>
+            <button type="button" onclick="closeEditModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">취소</button>
         </form>
     </div></div>
-
     <div id="reserveModal" class="modal"><div class="m-content">
-        <h2>예약</h2>
+        <h2>예약 등록</h2>
         <form action="/reserve" method="POST">
             <input type="hidden" name="inst_name" id="selectedInstName" value="{{ instruments[0].name if instruments else '' }}">
             <button type="submit" style="width:100%; padding:18px; background:{{ color }}; border:none; font-weight:bold; border-radius:12px;">확인</button>
             <button type="button" onclick="closeReserveModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
         </form>
     </div></div>
-
     <script>
         function selectInst(el, name) { document.querySelectorAll('.inst-card').forEach(c => c.classList.remove('active')); el.classList.add('active'); document.getElementById('selectedInstName').value = name; }
         function openEditModal() { document.getElementById('editModal').style.display = 'block'; }
