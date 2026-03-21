@@ -1,49 +1,54 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ session_name }} 상세 정보</title>
-    <style>
-        body { background: #121212; color: #eee; font-family: sans-serif; margin: 0; padding: 40px; }
-        .container { max-width: 900px; margin: auto; background: #1e1e1e; padding: 30px; border-radius: 15px; border: 1px solid #333; }
-        .header { border-bottom: 2px solid #f39c12; padding-bottom: 15px; margin-bottom: 30px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .box { background: #252525; padding: 20px; border-radius: 10px; border: 1px solid #444; }
-        h2 { color: #f39c12; margin-top: 0; }
-        .btn-reserve { display: block; background: #f39c12; color: #121212; padding: 15px; text-decoration: none; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 20px; }
-        .calendar-temp { margin-top: 20px; border: 1px dashed #555; height: 150px; display: flex; align-items: center; justify-content: center; color: #888; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🎸 {{ session_name }} 세션 대여 및 정보</h1>
-            <a href="/" style="color: #888; text-decoration: none;">← 홈으로</a>
-        </div>
+<style>
+    .layout { display: flex; gap: 20px; padding: 20px; }
+    .center-content { flex: 3; background: #1e1e1e; padding: 20px; border-radius: 10px; }
+    .right-sidebar { flex: 1; background: #252525; padding: 20px; border-radius: 10px; height: fit-content; }
+    .inst-card { border: 1px solid #444; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; }
+    .calendar { border-top: 1px solid #333; margin-top: 20px; padding-top: 20px; }
+    .reservation-block { background: #f39c12; color: #000; margin: 2px; padding: 5px; border-radius: 4px; font-size: 0.8em; }
+</style>
 
-        <div class="info-grid">
-            <div class="box">
-                <h2>👤 파트장 정보</h2>
-                <p><strong>이름:</strong> {{ leader.name }}</p>
-                <p><strong>연락처:</strong> {{ leader.contact }}</p>
-                <p><strong>공지:</strong> {{ leader.notice }}</p>
+<div class="layout">
+    <div class="center-content">
+        <h1>🎸 {{ session_name }}</h1>
+        
+        {% if session_name == 'Vocal' %}
+            <div style="padding: 100px 0;"><h3>보컬 세션은 아직 예약 기능이 없습니다.</h3></div>
+        {% else %}
+            {% for inst in instruments %}
+            <div class="inst-card">
+                <img src="{{ inst.img }}" width="80" style="margin-right:20px;">
+                <div>
+                    <strong>{{ inst.name }}</strong> | <span>{{ inst.status }}</span>
+                </div>
             </div>
+            {% endfor %}
 
-            <div class="box">
-                <h2>🎹 악기 및 예약</h2>
-                {% if session_name == 'Vocal' %}
-                    <p>보컬 파트는 개인 장비를 사용합니다.</p>
-                {% else %}
-                    <p>현재 대여 가능 악기: <strong>{{ session_name }} 공용 1호</strong></p>
-                    <div class="calendar-temp">📅 예약 달력 준비 중</div>
-                    {% if user %}
-                        <a href="#" class="btn-reserve">지금 예약하기</a>
-                    {% else %}
-                        <p style="color: #e74c3c; font-size: 0.9em; margin-top: 15px;">⚠️ 로그인이 필요합니다.</p>
-                    {% endif %}
-                {% endif %}
+            <div class="calendar">
+                <h3>📅 예약 현황</h3>
+                <div style="height: 300px; overflow-y: scroll; background: #111;">
+                    <div class="time-slot">09:00 [28K 조도형 - {{ session_name }} 공용 1호]</div>
+                    </div>
             </div>
-        </div>
+        {% endif %}
     </div>
-</body>
-</html>
+
+    <div class="right-sidebar">
+        <div style="border-bottom: 1px solid #444; padding-bottom: 15px; margin-bottom: 15px;">
+            <h3>👤 파트장</h3>
+            <p>이름: {{ leader.name }}</p>
+            <p>인스타: <a href="https://instagram.com/{{ leader.instagram|replace('@','') }}" style="color:#f39c12;">{{ leader.instagram }}</a></p>
+        </div>
+
+        {% if session_name != 'Vocal' %}
+        <div class="reservation-form">
+            <h3>⏰ 예약하기</h3>
+            <form action="/reserve" method="POST">
+                날짜: <input type="date" name="date" style="width:100%;"><br><br>
+                시작: <input type="time" step="1800" name="start" style="width:100%;"><br><br>
+                종료: <input type="time" step="1800" name="end" style="width:100%;">
+                <button type="submit" style="width:100%; background:#f39c12; margin-top:15px; border:none; padding:10px; font-weight:bold; cursor:pointer;">예약 신청</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
