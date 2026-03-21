@@ -2,38 +2,54 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>모여락 회원가입</title>
-    <link rel="icon" href="/static/images/moyorak_logo.ico">
+    <title>회원가입 - 모여락</title>
     <style>
-        body { background-color: #121212; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-box { background-color: #1f1f1f; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); text-align: center; width: 320px; }
-        .login-box img { height: 50px; margin-bottom: 20px; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background-color: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #f39c12; color: #121212; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 15px; }
-        button:hover { background-color: #e67e22; }
+        body { background-color: #0d0d0d; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .signup-box { background: #1a1a1a; padding: 40px; border-radius: 20px; width: 350px; border: 1px solid #333; }
+        h2 { color: #f39c12; margin-top: 0; text-align: center; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.8em; color: #888; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; box-sizing: border-box; outline: none; }
+        input:focus, select:focus { border-color: #f39c12; }
+        .submit-btn { width: 100%; padding: 15px; background: #f39c12; border: none; color: #000; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="login-box">
-        <a href="/"><img src="/static/images/moyorak_logo.png" alt="모여락 로고"></a>
-        <h2>회원가입</h2>
+    <div class="signup-box">
+        <h2>MOYORAK SIGNUP</h2>
         <form action="/signup" method="POST">
-            <input type="text" name="username" placeholder="아이디" required>
-            <input type="password" name="password" placeholder="비밀번호" required>
-            <input type="text" name="name" placeholder="이름" required>
-            <select name="generation">
-                <option value="28">28기</option>
-                <option value="28.5">28.5기</option>
-                <option value="29">29기</option>
-            </select>
-            <select name="session_type">
-                <option value="Vocal">보컬</option>
-                <option value="Guitar">기타</option>
-                <option value="Base">베이스</option>
-                <option value="Drum">드럼</option>
-                <option value="Keyboard">키보드</option>
-            </select>
-            <button type="submit">가입하기</button>
+            <div class="input-group">
+                <label>아이디</label>
+                <input type="text" name="username" required>
+            </div>
+            <div class="input-group">
+                <label>비밀번호</label>
+                <input type="password" name="password" required>
+            </div>
+            <div class="input-group">
+                <label>이름</label>
+                <input type="text" name="name" required>
+            </div>
+            <div class="input-group">
+                <label>기수</label>
+                <select name="generation">
+                    {% for gen in generations %}
+                    <option value="{{ gen }}">{{ gen }}기</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="input-group">
+                <label>세션</label>
+                <select name="session">
+                    <option value="Vocal">보컬</option>
+                    <option value="Guitar">기타</option>
+                    <option value="Base">베이스</option>
+                    <option value="Drum">드럼</option>
+                    <option value="Keyboard">키보드</option>
+                </select>
+            </div>
+            <button type="submit" class="submit-btn">가입하기</button>
+            <center><br><a href="/" style="color:#555; text-decoration:none; font-size:0.8em;">취소하고 돌아가기</a></center>
         </form>
     </div>
 </body>
