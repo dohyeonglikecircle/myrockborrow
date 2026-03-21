@@ -6,7 +6,7 @@
     <title>{{ session_name }} - 모여락 예약 시스템</title>
     <style>
         :root {
-            --point-color: {{ color }}; /* 세션별 고유 색상 */
+            --point-color: {{ color }}; 
             --bg-black: #000000;
             --card-bg: #111111;
             --border-color: #222222;
@@ -19,10 +19,9 @@
 
         /* --- 중앙 메인 영역 --- */
         .main-content { flex: 3; padding: 40px; border-right: 1px solid var(--border-color); }
-        
         .session-title { font-size: 2.5em; color: var(--point-color); margin-bottom: 30px; font-weight: 800; }
 
-        /* 악기 선택 탭 (기타/베이스용) */
+        /* 악기 선택 탭 */
         .inst-tabs { display: flex; gap: 12px; margin-bottom: 25px; }
         .tab { 
             padding: 12px 25px; background: var(--card-bg); border: 1px solid var(--border-color); 
@@ -36,49 +35,29 @@
             border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color);
             background: var(--bg-black);
         }
-        .grid-cell { 
-            border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); 
-            height: 50px; position: relative; 
-        }
+        .grid-cell { border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); height: 50px; position: relative; }
         .time-label { text-align: right; padding-right: 10px; font-size: 12px; color: var(--text-gray); line-height: 50px; background: #050505; }
-        .header-cell { 
-            background: var(--card-bg); text-align: center; font-weight: bold; padding: 15px 0; 
-            border-bottom: 2px solid var(--point-color); font-size: 14px;
-        }
-
-        /* 예약된 블록 (이미지 느낌) */
-        .booked-item { 
-            position: absolute; left: 3px; right: 3px; background: var(--point-color); 
-            color: #000; border-radius: 4px; padding: 5px; font-size: 11px; font-weight: 800; 
-            z-index: 5; overflow: hidden;
-        }
+        .header-cell { background: var(--card-bg); text-align: center; font-weight: bold; padding: 15px 0; border-bottom: 2px solid var(--point-color); font-size: 14px; }
 
         /* --- 오른쪽 사이드바 --- */
         .sidebar { flex: 1; padding: 40px; background: #050505; position: sticky; top: 0; height: 100vh; }
         .info-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 15px; padding: 25px; margin-bottom: 20px; }
         .info-card h3 { margin-top: 0; color: var(--point-color); font-size: 1.1em; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-        
-        .leader-info p { margin: 10px 0; font-size: 0.95em; }
         .insta-tag { color: #3498db; text-decoration: none; font-weight: bold; }
 
         .btn-open-modal { 
             width: 100%; background: var(--point-color); color: #000; border: none; padding: 16px; 
             border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1em;
         }
-        .btn-open-modal:hover { opacity: 0.9; transform: translateY(-2px); }
 
-        /* --- 보컬 전용 뷰 --- */
-        .vocal-hero { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .vocal-card { width: 400px; text-align: center; }
-
-        /* --- 예약 팝업 모달 (제시해주신 이미지 스타일) --- */
+        /* --- 예약 팝업 모달 (이미지 기반 디자인) --- */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
         .modal-content { 
             background: #1c1c1c; margin: 8% auto; padding: 35px; border-radius: 25px; 
             width: 450px; border: 1px solid #333; position: relative;
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .modal-header h2 { margin: 0; font-size: 1.5em; letter-spacing: -0.5px; }
+        .modal-header h2 { margin: 0; font-size: 1.5em; color: #fff; }
         .close-btn { color: var(--text-gray); font-size: 30px; cursor: pointer; }
 
         .input-group { margin-bottom: 20px; }
@@ -90,7 +69,7 @@
         .time-flex { display: flex; gap: 15px; }
         .modal-select { 
             flex: 1; background: #111; color: #fff; border: 1.5px solid var(--point-color); 
-            padding: 14px; border-radius: 12px; font-size: 1em; outline: none; appearance: none;
+            padding: 14px; border-radius: 12px; font-size: 1em; outline: none;
         }
 
         .btn-reserve-submit { 
@@ -98,6 +77,9 @@
             padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1em; 
             margin-top: 30px; cursor: pointer;
         }
+
+        /* 보컬 전용 */
+        .vocal-hero { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
     </style>
 </head>
 <body>
@@ -105,27 +87,21 @@
     <div class="flex-wrapper">
         {% if session_name == 'Vocal' %}
         <div class="vocal-hero">
-            <div class="info-card vocal-card">
+            <div class="info-card" style="width:400px; text-align:center;">
                 <h1 style="font-size: 4em; color: var(--point-color); margin: 0;">VOCAL</h1>
-                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
                 <p style="font-size: 1.2em;">👤 파트장: <strong>{{ leader.name }}</strong></p>
-                <p>인스타그램: <a href="https://instagram.com/{{ leader.instagram|replace('@','') }}" class="insta-tag">{{ leader.instagram }}</a></p>
-                <p style="color: var(--text-gray); margin-top: 30px; font-size: 0.9em;">보컬 세션은 악기 예약이 필요하지 않습니다.</p>
-                <br>
-                <a href="/" style="color: var(--text-gray); text-decoration: none; font-size: 0.8em;">← 홈으로 돌아가기</a>
+                <p>인스타그램: <a href="#" class="insta-tag">{{ leader.instagram }}</a></p>
+                <p style="color: var(--text-gray); margin-top: 30px;">보컬 세션은 예약이 필요하지 않습니다.</p>
+                <br><a href="/" style="color: var(--text-gray); text-decoration: none; font-size: 0.8em;">← 홈으로</a>
             </div>
         </div>
-
         {% else %}
         <div class="main-content">
             <h1 class="session-title">{{ session_name }}</h1>
-
             <div class="inst-tabs">
                 {% if instruments %}
                     {% for inst in instruments %}
-                    <div class="tab {% if loop.first %}active{% endif %}" onclick="selectInstrument('{{ inst.name }}')">
-                        {{ inst.name }}
-                    </div>
+                    <div class="tab {% if loop.first %}active{% endif %}" onclick="selectInstrument('{{ inst.name }}')">{{ inst.name }}</div>
                     {% endfor %}
                 {% else %}
                     <div class="tab active">{{ session_name }} 공용</div>
@@ -134,36 +110,26 @@
 
             <div class="calendar-grid">
                 <div class="grid-cell header-cell">시간</div>
-                {% for day in week_days %}
-                <div class="grid-cell header-cell">{{ day }}</div>
-                {% endfor %}
-
+                {% for day in week_days %}<div class="grid-cell header-cell">{{ day }}</div>{% endfor %}
                 {% for h in range(9, 23) %}
                 <div class="grid-cell time-label">{{ h }}:00</div>
-                {% for day in range(7) %}
-                <div class="grid-cell" id="slot-{{h}}-00-{{day}}"></div>
-                {% endfor %}
-                
+                {% for day in range(7) %}<div class="grid-cell"></div>{% endfor %}
                 <div class="grid-cell time-label">{{ h }}:30</div>
-                {% for day in range(7) %}
-                <div class="grid-cell" id="slot-{{h}}-30-{{day}}"></div>
-                {% endfor %}
+                {% for day in range(7) %}<div class="grid-cell"></div>{% endfor %}
                 {% endfor %}
             </div>
         </div>
 
         <div class="sidebar">
-            <div class="info-card leader-info">
+            <div class="info-card">
                 <h3>👤 파트장 정보</h3>
-                <p><strong>이름:</strong> {{ leader.name }}</p>
-                <p><strong>인스타:</strong> <a href="#" class="insta-tag">{{ leader.instagram }}</a></p>
+                <p>이름: <strong>{{ leader.name }}</strong></p>
+                <p>인스타: <a href="#" class="insta-tag">{{ leader.instagram }}</a></p>
             </div>
-
             <div class="info-card">
                 <h3>📅 일정 관리</h3>
                 <button class="btn-open-modal" onclick="openModal()">새로운 일정 등록</button>
             </div>
-            
             <center><a href="/" style="color: var(--text-gray); text-decoration: none; font-size: 0.8em;">← 홈으로 가기</a></center>
         </div>
         {% endif %}
@@ -180,8 +146,8 @@
                 <input type="hidden" name="inst_name" id="modal_inst_name" value="{{ instruments[0].name if instruments else session_name }}">
                 
                 <div class="input-group">
-                    <label class="input-label">날짜 선택</label>
-                    <input type="date" name="date" class="modal-input" required>
+                    <label class="input-label">날짜 선택 (향후 7일 내)</label>
+                    <input type="date" name="date" id="reservationDate" class="modal-input" required>
                 </div>
 
                 <div class="time-flex">
@@ -205,9 +171,9 @@
                     </div>
                 </div>
 
-                <div class="input-group" style="margin-top:10px;">
-                    <label class="input-label">예약자 정보</label>
-                    <input type="text" class="modal-input" value="{{ user }} (자동입력)" readonly style="border-color:#333; color:#666;">
+                <div class="input-group">
+                    <label class="input-label">예약자</label>
+                    <input type="text" class="modal-input" value="{{ user }}님" readonly style="border-color:#333; color:#666;">
                 </div>
 
                 <button type="submit" class="btn-reserve-submit">예약 완료</button>
@@ -216,21 +182,27 @@
     </div>
 
     <script>
-        // 모달 제어
-        function openModal() { document.getElementById("reserveModal").style.display = "block"; }
+        function setDateLimit() {
+            const dateInput = document.getElementById('reservationDate');
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const future = new Date();
+            future.setDate(now.getDate() + 7);
+            const futureStr = future.toISOString().split('T')[0];
+            
+            dateInput.min = todayStr;
+            dateInput.max = futureStr;
+            dateInput.value = todayStr;
+        }
+
+        function openModal() { setDateLimit(); document.getElementById("reserveModal").style.display = "block"; }
         function closeModal() { document.getElementById("reserveModal").style.display = "none"; }
-        
-        // 악기 탭 선택
         function selectInstrument(name) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
             document.getElementById('modal_inst_name').value = name;
-            // 여기서 해당 악기의 데이터를 다시 불러오는 로직을 추가할 수 있습니다.
         }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById("reserveModal")) { closeModal(); }
-        }
+        window.onclick = function(event) { if (event.target == document.getElementById("reserveModal")) { closeModal(); } }
     </script>
 </body>
 </html>
