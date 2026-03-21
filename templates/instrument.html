@@ -30,7 +30,7 @@
                 {% for inst in instruments %}
                 <div class="inst-card {% if loop.first %}active{% endif %}" onclick="selectInst(this, '{{ inst.name }}')">
                     {% if is_admin and inst.id != 'default' %}
-                    <button class="del-btn" onclick="event.stopPropagation(); if(confirm('이 악기를 삭제하시겠습니까?')) location.href='/admin/delete_instrument/{{ inst.id }}'">×</button>
+                    <button class="del-btn" onclick="event.stopPropagation(); if(confirm('이 악기를 삭제할까요?')) location.href='/admin/delete_instrument/{{ inst.id }}'">×</button>
                     {% endif %}
                     {% if inst.img %}<img src="{{ inst.img }}" alt="악기">{% else %}<div style="height:90px; background:#0a0a0a; border-radius:8px; line-height:90px; font-size:11px; color:#333;">NO IMAGE</div>{% endif %}
                     <span>{{ inst.name }}</span>
@@ -38,7 +38,7 @@
                 {% endfor %}
             </div>
             <div class="grid" onclick="openReserveModal()">
-                <div class="cell"></div>{% for d in week_days %}<div class="cell" style="text-align:center; font-size:12px;">{{ d }}</div>{% endfor %}
+                <div class="cell"></div>{% for d in week_days %}<div class="cell" style="text-align:center; font-size:12px; line-height:45px;">{{ d }}</div>{% endfor %}
                 {% for h in range(0, 24) %}<div class="cell" style="font-size:10px; text-align:right; color:#555; padding-right:5px; line-height:45px;">{{ h }}:00</div>{% for d in range(7) %}<div class="cell"></div>{% endfor %}{% endfor %}
             </div>
         </div>
@@ -50,7 +50,6 @@
                 <p><strong>인스타:</strong> <span style="color:{{ color }};">{{ leader.instagram }}</span></p>
             </div>
             <button onclick="openReserveModal()" style="width:100%; padding:20px; background:{{ color }}; border:none; font-weight:bold; border-radius:15px; cursor:pointer; color:#000;">🗓️ 예약하기</button>
-            <center><br><a href="/" style="color:#444; text-decoration:none; font-size:0.8em;">← 홈으로 돌아가기</a></center>
         </div>
     </div>
 
@@ -58,11 +57,9 @@
         <h2 style="color:{{ color }};">파트장 정보 수정</h2>
         <form action="/admin/setup" method="POST">
             <input type="hidden" name="target_session" value="{{ session_name }}">
-            <label style="color:#666; font-size:12px;">이름</label>
             <input type="text" name="leader_name" class="modal-input" value="{{ leader.name }}" required>
-            <label style="color:#666; font-size:12px;">인스타그램</label>
             <input type="text" name="instagram" class="modal-input" value="{{ leader.instagram }}" required>
-            <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; color:#000; font-weight:bold; border-radius:10px; margin-top:15px;">정보 저장하기</button>
+            <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; color:#000; font-weight:bold; border-radius:10px; margin-top:15px;">저장하기</button>
             <button type="button" onclick="closeEditModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">취소</button>
         </form>
     </div></div>

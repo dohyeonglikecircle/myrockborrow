@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_final_system_fixed_v12'
+app.config['SECRET_KEY'] = 'moyorak_logo_fix_2026'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=5)
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
@@ -36,14 +36,12 @@ def home():
 def view_session(session_name):
     if not session.get('user'): return redirect(url_for('login'))
     
-    # 파트장 정보 로드
     s_raw = get_fb(f"sessions/{session_name}")
     leader = {
         'name': s_raw.get('leader_name', {}).get('stringValue', '미정'),
         'instagram': s_raw.get('instagram', {}).get('stringValue', '@moyorak')
     }
     
-    # 악기 목록 로드
     all_docs = get_fb_collection("instruments")
     instruments = []
     for doc in all_docs:
@@ -67,32 +65,21 @@ def view_session(session_name):
                            color=SESSION_COLORS.get(session_name, '#333'), 
                            user=session.get('user'), is_admin=(session.get('user') == 'admin'))
 
-# 🔥 [수정됨] 파트장 정보 업데이트 로직
 @app.route('/admin/setup', methods=['POST'])
 def admin_setup():
     if session.get('user') != 'admin': return redirect('/')
-    
     t_s = request.form.get('target_session')
     l_n = request.form.get('leader_name')
     l_i = request.form.get('instagram')
     
-    # 파이어베이스 전송 데이터 규격 (fields 포함)
     payload = {
         "fields": {
             "leader_name": {"stringValue": l_n},
             "instagram": {"stringValue": l_i}
         }
     }
-    
-    # PATCH 요청으로 특정 필드만 업데이트
     update_url = f"{BASE_URL}/sessions/{t_s}?updateMask.fieldPaths=leader_name&updateMask.fieldPaths=instagram"
-    res = requests.patch(update_url, json=payload)
-    
-    if res.status_code == 200:
-        flash(f"{t_s} 파트장 정보가 수정되었습니다.")
-    else:
-        flash("수정 실패. 파이어베이스 설정을 확인하세요.")
-        
+    requests.patch(update_url, json=payload)
     return redirect(url_for('view_session', session_name=t_s))
 
 @app.route('/admin/add_instrument', methods=['POST'])
