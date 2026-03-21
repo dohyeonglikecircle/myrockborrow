@@ -9,8 +9,7 @@
         .logo-area { display: flex; align-items: center; gap: 12px; }
         .main-logo { height: 40px; }
         .site-title { color: #f39c12; font-size: 1.4em; font-weight: bold; margin: 0; }
-        .header-right { display: flex; gap: 10px; }
-        .nav-btn { background: #222; border: 1px solid #444; color: #fff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-size: 0.9em; font-weight: bold; }
+        .nav-btn { background: #222; border: 1px solid #444; color: #fff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-size: 0.9em; font-weight: bold; margin-left: 5px; }
         .signup-btn { background: #f39c12; color: #000; border: none; }
         .btn-container { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 60px 0; }
         .session-btn { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 18px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; transition: 0.2s; }
@@ -26,9 +25,9 @@
             <img src="{{ url_for('static', filename='moyorak_logo.png') }}" alt="Logo" class="main-logo">
             <h1 class="site-title">모여락 공용악기대여</h1>
         </div>
-        <div class="header-right">
+        <div>
             {% if user %}
-                <span style="font-size:0.8em; color:#888; align-self:center; margin-right:10px;">{{ user }}님 환영합니다</span>
+                <span style="font-size:0.8em; color:#888; margin-right:10px;">{{ user }}님</span>
                 <a href="/logout" class="nav-btn">로그아웃</a>
             {% else %}
                 <a href="/login" class="nav-btn">로그인</a>
@@ -50,9 +49,9 @@
         <h2 style="color:#e74c3c; margin-top:0;">신규 악기 등록</h2>
         <form action="/admin/add_instrument" method="POST">
             <select name="session_name" class="modal-input"><option value="Guitar">Guitar</option><option value="Base">Base</option><option value="Drum">Drum</option><option value="Keyboard">Keyboard</option></select>
-            <input type="text" name="instrument_model" class="modal-input" placeholder="악기 모델명" required>
-            <input type="text" name="instrument_img" class="modal-input" placeholder="사진 직접다운로드 URL">
-            <button type="submit" style="width:100%; padding:15px; background:#e74c3c; border:none; color:#fff; font-weight:bold; border-radius:10px;">등록 완료</button>
+            <input type="text" name="instrument_model" class="modal-input" placeholder="모델명" required>
+            <input type="text" name="instrument_img" class="modal-input" placeholder="사진 URL">
+            <button type="submit" style="width:100%; padding:15px; background:#e74c3c; border:none; color:#fff; font-weight:bold; border-radius:10px;">등록</button>
             <button type="button" onclick="closeAdmin()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
         </form>
     </div></div>

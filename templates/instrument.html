@@ -12,46 +12,94 @@
         .inst-card { background: #111; border: 1.5px solid #333; padding: 12px; border-radius: 15px; min-width: 150px; text-align: center; cursor: pointer; position: relative; }
         .inst-card.active { border-color: {{ color }}; background: rgba(255,255,255,0.05); }
         .inst-card img { width: 100%; height: 90px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; }
-        .del-btn { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; z-index: 10; font-weight: bold; }
+        .del-btn { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-weight: bold; }
         .grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); border: 1px solid #222; }
-        .cell { border: 0.5px solid #222; height: 45px; }
+        .cell { border: 0.5px solid #222; height: 45px; position: relative; cursor: pointer; }
+        .cell:hover { background: #111; }
         .info-box { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; position: relative; }
         .edit-trigger { position: absolute; top: 15px; right: 15px; font-size: 11px; color: #555; cursor: pointer; border: 1px solid #333; padding: 3px 6px; border-radius: 4px; }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
-        .m-content { background: #1c1c1c; margin: 10% auto; padding: 35px; border-radius: 25px; width: 400px; border: 1px solid #333; }
+        .m-content { background: #1c1c1c; margin: 5% auto; padding: 35px; border-radius: 25px; width: 450px; border: 1px solid #333; }
         .modal-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
+        .date-item { padding: 12px; border: 1px solid #333; margin-bottom: 8px; cursor: pointer; text-align: center; border-radius: 10px; }
+        .date-item.selected { border-color: {{ color }}; background: rgba(255,255,255,0.05); color: {{ color }}; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="wrapper">
+        {% if session_name == 'Vocal' %}
+        <div style="width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <h1 style="font-size: 5em; color: {{ color }};">VOCAL</h1>
+            <div class="info-box" style="width:350px; text-align:center;">
+                <p>👤 파트장: <strong>{{ leader.name }}</strong></p>
+                <p>Instagram: {{ leader.instagram }}</p>
+            </div>
+            <a href="/" style="color:#444; text-decoration:none;">← 홈으로</a>
+        </div>
+        {% else %}
         <div class="main">
-            <h1 style="color: {{ color }};">{{ session_name }}</h1>
+            <h1 style="color: {{ color }}; margin: 0 0 30px 0;">{{ session_name }}</h1>
             <div class="inst-tabs">
                 {% for inst in instruments %}
                 <div class="inst-card {% if loop.first %}active{% endif %}" onclick="selectInst(this, '{{ inst.name }}')">
-                    {% if is_admin and inst.id != 'default' %}
-                    <button class="del-btn" onclick="event.stopPropagation(); if(confirm('삭제할까요?')) location.href='/admin/delete_instrument/{{ inst.id }}'">×</button>
-                    {% endif %}
+                    {% if is_admin and inst.id != 'default' %}<button class="del-btn" onclick="event.stopPropagation(); if(confirm('삭제?')) location.href='/admin/delete_instrument/{{ inst.id }}'">×</button>{% endif %}
                     {% if inst.img %}<img src="{{ inst.img }}" alt="악기">{% else %}<div style="height:90px; background:#0a0a0a; border-radius:8px; line-height:90px; font-size:11px; color:#333;">NO IMAGE</div>{% endif %}
                     <span>{{ inst.name }}</span>
                 </div>
                 {% endfor %}
             </div>
             <div class="grid" onclick="openReserveModal()">
-                <div class="cell"></div>{% for d in week_days %}<div class="cell" style="text-align:center; font-size:12px; line-height:45px;">{{ d }}</div>{% endfor %}
-                {% for h in range(0, 24) %}<div class="cell" style="font-size:10px; text-align:right; color:#555; padding-right:5px; line-height:45px;">{{ h }}:00</div>{% for d in range(7) %}<div class="cell"></div>{% endfor %}{% endfor %}
+                <div class="cell" style="background:#111;"></div>{% for d in week_days %}<div class="cell" style="background:#111; text-align:center; font-weight:bold; font-size:12px; line-height:45px;">{{ d }}</div>{% endfor %}
+                {% for h in range(0, 24) %}{% set ts = "%02d" % h %}
+                <div class="cell" style="font-size:11px; text-align:right; color:#555; padding-right:5px; line-height:45px;">{{ ts }}:00</div>{% for d in range(7) %}<div class="cell"></div>{% endfor %}
+                <div class="cell" style="font-size:11px; text-align:right; color:#555; padding-right:5px; line-height:45px;">{{ ts }}:30</div>{% for d in range(7) %}<div class="cell"></div>{% endfor %}
+                {% endfor %}
             </div>
         </div>
         <div class="sidebar">
             <div class="info-box">
                 {% if is_admin %}<span class="edit-trigger" onclick="openEditModal()">수정</span>{% endif %}
                 <h3>👤 파트장 정보</h3>
-                <p><strong>이름:</strong> {{ leader.name }}</p>
-                <p><strong>인스타:</strong> <span style="color:{{ color }};">{{ leader.instagram }}</span></p>
+                <p>이름: {{ leader.name }}</p>
+                <p>인스타: {{ leader.instagram }}</p>
             </div>
-            <button onclick="openReserveModal()" style="width:100%; padding:20px; background:{{ color }}; border:none; font-weight:bold; border-radius:15px; cursor:pointer; color:#000;">🗓️ 예약하기</button>
+            <button onclick="openReserveModal()" style="width:100%; padding:20px; background:{{ color }}; border:none; color:#000; font-weight:bold; border-radius:15px; cursor:pointer; font-size:1.1em;">🗓️ 새로운 일정 등록</button>
         </div>
+        {% endif %}
     </div>
+
+    <div id="reserveModal" class="modal"><div class="m-content">
+        <h2 style="margin-top:0;">새로운 일정 등록</h2>
+        <form action="/reserve" method="POST">
+            <input type="hidden" name="inst_name" id="selectedInstName" value="{{ instruments[0].name if instruments else '' }}">
+            <input type="hidden" name="date" id="reserveDate" required>
+            
+            <label style="color:#888; font-size:0.8em;">날짜 선택 (앞으로 7일)</label>
+            <div id="datePickList" style="margin:10px 0; max-height:180px; overflow-y:auto; padding-right:5px;"></div>
+            
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <div style="flex:1;">
+                    <label style="font-size:0.8em; color:#888;">시작 시간 (24H)</label>
+                    <select name="start_time" class="modal-input" style="margin:0;">
+                        {% for h in range(0, 24) %}{% set ts = "%02d" % h %}
+                        <option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:0.8em; color:#888;">종료 시간 (24H)</label>
+                    <select name="end_time" class="modal-input" style="margin:0;">
+                        {% for h in range(0, 24) %}{% set ts = "%02d" % h %}
+                        <option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <button type="submit" style="width:100%; padding:18px; background:{{ color }}; border:none; font-weight:bold; margin-top:30px; border-radius:12px; cursor:pointer; color:#000;">예약 신청 완료</button>
+            <button type="button" onclick="closeReserveModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">닫기</button>
+        </form>
+    </div></div>
+
     <div id="editModal" class="modal"><div class="m-content">
         <h2>파트장 정보 수정</h2>
         <form action="/admin/setup" method="POST">
@@ -62,20 +110,34 @@
             <button type="button" onclick="closeEditModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">취소</button>
         </form>
     </div></div>
-    <div id="reserveModal" class="modal"><div class="m-content">
-        <h2>예약 등록</h2>
-        <form action="/reserve" method="POST">
-            <input type="hidden" name="inst_name" id="selectedInstName" value="{{ instruments[0].name if instruments else '' }}">
-            <button type="submit" style="width:100%; padding:18px; background:{{ color }}; border:none; font-weight:bold; border-radius:12px;">확인</button>
-            <button type="button" onclick="closeReserveModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
-        </form>
-    </div></div>
+
     <script>
         function selectInst(el, name) { document.querySelectorAll('.inst-card').forEach(c => c.classList.remove('active')); el.classList.add('active'); document.getElementById('selectedInstName').value = name; }
+        
+        function openReserveModal() {
+            const container = document.getElementById('datePickList');
+            container.innerHTML = '';
+            const days = ['일','월','화','수','목','금','토'];
+            for(let i=0; i<=7; i++) {
+                const d = new Date(); d.setDate(d.getDate() + i);
+                const iso = d.toISOString().split('T')[0];
+                const btn = document.createElement('div');
+                btn.className = 'date-item';
+                btn.innerText = `${d.getMonth()+1}/${d.getDate()} (${days[d.getDay()]})` + (i===0 ? " [오늘]" : "");
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.date-item').forEach(el => el.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    document.getElementById('reserveDate').value = iso;
+                };
+                if(i===0) { btn.classList.add('selected'); document.getElementById('reserveDate').value = iso; }
+                container.appendChild(btn);
+            }
+            document.getElementById('reserveModal').style.display = 'block';
+        }
+        function closeReserveModal() { document.getElementById('reserveModal').style.display = 'none'; }
         function openEditModal() { document.getElementById('editModal').style.display = 'block'; }
         function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
-        function openReserveModal() { document.getElementById('reserveModal').style.display = 'block'; }
-        function closeReserveModal() { document.getElementById('reserveModal').style.display = 'none'; }
     </script>
 </body>
 </html>

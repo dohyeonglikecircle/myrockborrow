@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_final_perfect_v13'
+app.config['SECRET_KEY'] = 'moyorak_final_perfect_v14'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=5)
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
@@ -32,27 +32,21 @@ def get_fb_collection(collection):
 def home():
     return render_template('index.html', user=session.get('user'))
 
-# --- [회원가입] 19기~29기 0.5단위 ---
+# --- [회원가입] ---
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
         u_id = request.form.get('username').strip().lower()
-        u_pw = request.form.get('password')
-        u_name = request.form.get('name')
-        u_gen = request.form.get('generation')
-        u_session = request.form.get('session')
-
         payload = {"fields": {
-            "password": {"stringValue": u_pw},
-            "name": {"stringValue": u_name},
-            "generation": {"stringValue": u_gen},
-            "session": {"stringValue": u_session}
+            "password": {"stringValue": request.form.get('password')},
+            "name": {"stringValue": request.form.get('name')},
+            "generation": {"stringValue": request.form.get('generation')},
+            "session": {"stringValue": request.form.get('session')}
         }}
         requests.patch(f"{BASE_URL}/users/{u_id}", json=payload)
         flash("회원가입 완료!")
         return redirect(url_for('login'))
     
-    # 19기 ~ 29기 (0.5 단위 리스트)
     gens = []
     curr = 19.0
     while curr <= 29.0:
@@ -94,6 +88,13 @@ def view_session(session_name):
     today = datetime.now()
     week_days = [(today + timedelta(days=i)).strftime('%m/%d') for i in range(7)]
     return render_template('instrument.html', session_name=session_name, leader=leader, instruments=instruments, week_days=week_days, color=SESSION_COLORS.get(session_name, '#333'), user=session.get('user'), is_admin=(session.get('user') == 'admin'))
+
+@app.route('/reserve', methods=['POST'])
+def reserve():
+    if not session.get('user'): return redirect(url_for('login'))
+    # 실제 예약 저장 로직 (Firestore 등)은 여기에 추가
+    flash("예약 신청이 성공적으로 접수되었습니다.")
+    return redirect(request.referrer)
 
 @app.route('/admin/setup', methods=['POST'])
 def admin_setup():
