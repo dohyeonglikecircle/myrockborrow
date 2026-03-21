@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_final_fixed_v8'
+app.config['SECRET_KEY'] = 'moyorak_dynamic_v11'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=5)
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
@@ -14,13 +14,21 @@ SESSION_COLORS = {
     'Guitar': '#e67e22', 'Base': '#f1c40f', 'Drum': '#3498db', 'Keyboard': '#9b59b6', 'Vocal': '#2ecc71'
 }
 
+# 단일 문서 가져오기
 def get_fb(path):
     try:
         res = requests.get(f"{BASE_URL}/{path}", timeout=5)
-        if res.status_code == 200:
-            return res.json().get('fields', {})
+        return res.json().get('fields', {}) if res.status_code == 200 else {}
     except: return {}
-    return {}
+
+# 컬렉션 전체 목록 가져오기 (동적 악기 로딩용)
+def get_fb_collection(collection):
+    try:
+        res = requests.get(f"{BASE_URL}/{collection}", timeout=5)
+        if res.status_code == 200:
+            return res.json().get('documents', [])
+    except: return []
+    return []
 
 @app.route('/')
 def home():
@@ -30,17 +38,29 @@ def home():
 def view_session(session_name):
     if not session.get('user'): return redirect(url_for('login'))
 
-    # 파트장 정보 (데이터 없어도 미정으로 출력)
+    # 1. 파트장 정보
     s_raw = get_fb(f"sessions/{session_name}")
     leader = {
         'name': s_raw.get('leader_name', {}).get('stringValue', '미정'),
         'instagram': s_raw.get('instagram', {}).get('stringValue', '@moyorak')
     }
 
-    # 악기 목록 (기타/베이스 다중 대응)
-    instruments = [{'name': f'{session_name} 1호'}]
-    if session_name in ['Guitar', 'Base']:
-        instruments.append({'name': f'{session_name} 2호'})
+    # 2. 동적 악기 목록 가져오기 (관리자가 등록한 모든 악기)
+    all_inst_docs = get_fb_collection("instruments")
+    instruments = []
+    
+    for doc in all_inst_docs:
+        f = doc.get('fields', {})
+        # 해당 세션에 맞는 악기만 필터링
+        if f.get('session', {}).get('stringValue') == session_name:
+            instruments.append({
+                'name': f.get('model_name', {}).get('stringValue', 'Unknown Model'),
+                'img': f.get('image_url', {}).get('stringValue', '')
+            })
+
+    # 만약 등록된 악기가 하나도 없다면 기본값 표시
+    if not instruments and session_name != 'Vocal':
+        instruments = [{'name': f'{session_name} 공용', 'img': ''}]
 
     today = datetime.now()
     week_days = [(today + timedelta(days=i)).strftime('%m/%d') for i in range(7)]
@@ -54,16 +74,23 @@ def view_session(session_name):
                            user=session.get('user'),
                            is_admin=(session.get('user') == 'admin'))
 
-@app.route('/reserve', methods=['POST'])
-def reserve():
-    if not session.get('user'): return redirect(url_for('login'))
-    flash("예약 신청이 완료되었습니다!")
-    return redirect(request.referrer)
-
 @app.route('/admin/add_instrument', methods=['POST'])
 def add_instrument():
     if session.get('user') != 'admin': return redirect('/')
-    flash("악기 등록이 완료되었습니다!")
+    s_name = request.form.get('session_name')
+    i_model = request.form.get('instrument_model')
+    i_img = request.form.get('instrument_img')
+    
+    payload = {
+        "fields": {
+            "session": {"stringValue": s_name},
+            "model_name": {"stringValue": i_model},
+            "image_url": {"stringValue": i_img}
+        }
+    }
+    # Firestore 'instruments' 컬렉션에 새 문서 생성
+    requests.post(f"{BASE_URL}/instruments", json=payload)
+    flash(f"{i_model} 등록 성공!")
     return redirect(url_for('home'))
 
 @app.route('/admin/setup', methods=['POST'])
