@@ -99,3 +99,30 @@ def logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# 기존 코드 하단에 추가
+@app.route('/reserve', methods=['POST'])
+def reserve():
+    if not session.get('user'): return redirect(url_for('login'))
+    
+    # 예약 정보 받아오기
+    inst_name = request.form.get('inst_name')
+    date = request.form.get('date')
+    start_time = request.form.get('start_time')
+    end_time = request.form.get('end_time')
+    user_info = session.get('user') # 예: 28K 조도형 (로그인 시 저장된 값)
+
+    # 파이어베이스 reservations 컬렉션에 저장
+    payload = {
+        "fields": {
+            "inst_name": {"stringValue": inst_name},
+            "date": {"stringValue": date},
+            "start_time": {"stringValue": start_time},
+            "end_time": {"stringValue": end_time},
+            "user": {"stringValue": user_info}
+        }
+    }
+    requests.post(f"{BASE_URL}/reservations", json=payload)
+    
+    flash(f"{inst_name} 예약이 완료되었습니다!")
+    return redirect(request.referrer)

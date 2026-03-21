@@ -2,79 +2,235 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>{{ session_name }} - 모여락</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ session_name }} - 모여락 예약 시스템</title>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; margin: 0; }
-        .flex-container { display: flex; min-height: 100vh; }
-        .main { flex: 3; padding: 30px; border-right: 1px solid #222; }
-        .sidebar { flex: 1; padding: 30px; background: #0a0a0a; }
-        
-        /* 캘린더 스타일 */
-        .grid { display: grid; grid-template-columns: 60px repeat(7, 1fr); border: 1px solid #222; margin-top: 20px; }
-        .cell { border: 0.5px solid #222; height: 45px; position: relative; font-size: 12px; }
-        .time-label { text-align: right; padding-right: 5px; color: #555; line-height: 45px; }
-        .header-cell { background: #111; text-align: center; font-weight: bold; padding: 10px 0; border-bottom: 2px solid {{ color }}; }
-        
-        /* 악기 탭 */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab { padding: 10px 20px; background: #111; border: 1px solid #333; border-radius: 5px; cursor: pointer; }
-        .tab.active { border-color: {{ color }}; color: {{ color }}; }
+        :root {
+            --point-color: {{ color }}; /* 세션별 고유 색상 */
+            --bg-black: #000000;
+            --card-bg: #111111;
+            --border-color: #222222;
+            --text-gray: #888888;
+        }
 
-        /* 보컬 전용 */
-        .vocal-hero { height: 80vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        body { background-color: var(--bg-black); color: #ffffff; font-family: 'Pretendard', sans-serif; margin: 0; overflow-x: hidden; }
+        
+        .flex-wrapper { display: flex; min-height: 100vh; }
+
+        /* --- 중앙 메인 영역 --- */
+        .main-content { flex: 3; padding: 40px; border-right: 1px solid var(--border-color); }
+        
+        .session-title { font-size: 2.5em; color: var(--point-color); margin-bottom: 30px; font-weight: 800; }
+
+        /* 악기 선택 탭 (기타/베이스용) */
+        .inst-tabs { display: flex; gap: 12px; margin-bottom: 25px; }
+        .tab { 
+            padding: 12px 25px; background: var(--card-bg); border: 1px solid var(--border-color); 
+            border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: bold;
+        }
+        .tab.active { border-color: var(--point-color); color: var(--point-color); box-shadow: 0 0 10px rgba(243, 156, 18, 0.2); }
+
+        /* 주간 캘린더 그리드 */
+        .calendar-grid { 
+            display: grid; grid-template-columns: 70px repeat(7, 1fr); 
+            border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color);
+            background: var(--bg-black);
+        }
+        .grid-cell { 
+            border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); 
+            height: 50px; position: relative; 
+        }
+        .time-label { text-align: right; padding-right: 10px; font-size: 12px; color: var(--text-gray); line-height: 50px; background: #050505; }
+        .header-cell { 
+            background: var(--card-bg); text-align: center; font-weight: bold; padding: 15px 0; 
+            border-bottom: 2px solid var(--point-color); font-size: 14px;
+        }
+
+        /* 예약된 블록 (이미지 느낌) */
+        .booked-item { 
+            position: absolute; left: 3px; right: 3px; background: var(--point-color); 
+            color: #000; border-radius: 4px; padding: 5px; font-size: 11px; font-weight: 800; 
+            z-index: 5; overflow: hidden;
+        }
+
+        /* --- 오른쪽 사이드바 --- */
+        .sidebar { flex: 1; padding: 40px; background: #050505; position: sticky; top: 0; height: 100vh; }
+        .info-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 15px; padding: 25px; margin-bottom: 20px; }
+        .info-card h3 { margin-top: 0; color: var(--point-color); font-size: 1.1em; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        
+        .leader-info p { margin: 10px 0; font-size: 0.95em; }
+        .insta-tag { color: #3498db; text-decoration: none; font-weight: bold; }
+
+        .btn-open-modal { 
+            width: 100%; background: var(--point-color); color: #000; border: none; padding: 16px; 
+            border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1em;
+        }
+        .btn-open-modal:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        /* --- 보컬 전용 뷰 --- */
+        .vocal-hero { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .vocal-card { width: 400px; text-align: center; }
+
+        /* --- 예약 팝업 모달 (제시해주신 이미지 스타일) --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
+        .modal-content { 
+            background: #1c1c1c; margin: 8% auto; padding: 35px; border-radius: 25px; 
+            width: 450px; border: 1px solid #333; position: relative;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .modal-header h2 { margin: 0; font-size: 1.5em; letter-spacing: -0.5px; }
+        .close-btn { color: var(--text-gray); font-size: 30px; cursor: pointer; }
+
+        .input-group { margin-bottom: 20px; }
+        .input-label { display: block; color: var(--text-gray); font-size: 0.85em; margin-bottom: 8px; margin-left: 5px; }
+        .modal-input { 
+            width: 100%; background: #111; color: #fff; border: 1.5px solid var(--point-color); 
+            padding: 14px; border-radius: 12px; font-size: 1em; box-sizing: border-box; outline: none;
+        }
+        .time-flex { display: flex; gap: 15px; }
+        .modal-select { 
+            flex: 1; background: #111; color: #fff; border: 1.5px solid var(--point-color); 
+            padding: 14px; border-radius: 12px; font-size: 1em; outline: none; appearance: none;
+        }
+
+        .btn-reserve-submit { 
+            width: 100%; background: var(--point-color); color: #000; border: none; 
+            padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1em; 
+            margin-top: 30px; cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <div class="flex-container">
+
+    <div class="flex-wrapper">
         {% if session_name == 'Vocal' %}
-        <div class="vocal-hero" style="width: 100%;">
-            <h1 style="font-size: 5em; color: {{ color }}; margin: 0;">VOCAL</h1>
-            <div style="background: #111; padding: 40px; border-radius: 15px; border: 1px solid #333; text-align: center;">
-                <h2>👤 파트장: {{ leader.name }}</h2>
-                <p>인스타그램: <span style="color: {{ color }};">{{ leader.instagram }}</span></p>
-                <p style="color: #666; margin-top: 20px;">보컬은 악기 대여가 필요하지 않습니다.</p>
+        <div class="vocal-hero">
+            <div class="info-card vocal-card">
+                <h1 style="font-size: 4em; color: var(--point-color); margin: 0;">VOCAL</h1>
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+                <p style="font-size: 1.2em;">👤 파트장: <strong>{{ leader.name }}</strong></p>
+                <p>인스타그램: <a href="https://instagram.com/{{ leader.instagram|replace('@','') }}" class="insta-tag">{{ leader.instagram }}</a></p>
+                <p style="color: var(--text-gray); margin-top: 30px; font-size: 0.9em;">보컬 세션은 악기 예약이 필요하지 않습니다.</p>
+                <br>
+                <a href="/" style="color: var(--text-gray); text-decoration: none; font-size: 0.8em;">← 홈으로 돌아가기</a>
             </div>
-            <a href="/" style="margin-top: 30px; color: #444; text-decoration: none;">← 홈으로 돌아가기</a>
         </div>
+
         {% else %}
-        <div class="main">
-            <h1 style="color: {{ color }};">{{ session_name }} Reservation</h1>
-            
-            <div class="tabs">
-                {% for inst in instruments %}
-                <div class="tab {% if loop.first %}active{% endif %}">{{ inst.name }}</div>
-                {% endfor %}
+        <div class="main-content">
+            <h1 class="session-title">{{ session_name }}</h1>
+
+            <div class="inst-tabs">
+                {% if instruments %}
+                    {% for inst in instruments %}
+                    <div class="tab {% if loop.first %}active{% endif %}" onclick="selectInstrument('{{ inst.name }}')">
+                        {{ inst.name }}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="tab active">{{ session_name }} 공용</div>
+                {% endif %}
             </div>
 
-            <div class="grid">
-                <div class="cell header-cell">시간</div>
-                {% for d in week_days %}<div class="cell header-cell">{{ d }}</div>{% endfor %}
-                
+            <div class="calendar-grid">
+                <div class="grid-cell header-cell">시간</div>
+                {% for day in week_days %}
+                <div class="grid-cell header-cell">{{ day }}</div>
+                {% endfor %}
+
                 {% for h in range(9, 23) %}
-                <div class="cell time-label">{{ h }}:00</div>
+                <div class="grid-cell time-label">{{ h }}:00</div>
                 {% for day in range(7) %}
-                <div class="cell"></div>
+                <div class="grid-cell" id="slot-{{h}}-00-{{day}}"></div>
+                {% endfor %}
+                
+                <div class="grid-cell time-label">{{ h }}:30</div>
+                {% for day in range(7) %}
+                <div class="grid-cell" id="slot-{{h}}-30-{{day}}"></div>
                 {% endfor %}
                 {% endfor %}
             </div>
         </div>
+
         <div class="sidebar">
-            <div style="background: #111; padding: 20px; border-radius: 10px; border: 1px solid #333;">
+            <div class="info-card leader-info">
                 <h3>👤 파트장 정보</h3>
-                <p>이름: {{ leader.name }}</p>
-                <p>인스타: <span style="color: {{ color }};">{{ leader.instagram }}</span></p>
+                <p><strong>이름:</strong> {{ leader.name }}</p>
+                <p><strong>인스타:</strong> <a href="#" class="insta-tag">{{ leader.instagram }}</a></p>
             </div>
-            <div style="background: #111; padding: 20px; border-radius: 10px; border: 1px solid #333; margin-top: 20px;">
-                <h3>⏰ 예약 신청</h3>
-                <form>
-                    <input type="date" style="width: 100%; margin-bottom: 10px; padding: 8px; background: #000; color: #fff; border: 1px solid #333;">
-                    <input type="time" style="width: 100%; margin-bottom: 10px; padding: 8px; background: #000; color: #fff; border: 1px solid #333;">
-                    <button type="button" style="width: 100%; padding: 12px; background: {{ color }}; border: none; font-weight: bold; border-radius: 5px;">신청하기</button>
-                </form>
+
+            <div class="info-card">
+                <h3>📅 일정 관리</h3>
+                <button class="btn-open-modal" onclick="openModal()">새로운 일정 등록</button>
             </div>
-            <center><br><a href="/" style="color: #444; text-decoration: none;">← 홈으로</a></center>
+            
+            <center><a href="/" style="color: var(--text-gray); text-decoration: none; font-size: 0.8em;">← 홈으로 가기</a></center>
         </div>
         {% endif %}
     </div>
+
+    <div id="reserveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>새로운 일정 등록</h2>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
+            
+            <form action="/reserve" method="POST">
+                <input type="hidden" name="inst_name" id="modal_inst_name" value="{{ instruments[0].name if instruments else session_name }}">
+                
+                <div class="input-group">
+                    <label class="input-label">날짜 선택</label>
+                    <input type="date" name="date" class="modal-input" required>
+                </div>
+
+                <div class="time-flex">
+                    <div class="input-group" style="flex:1;">
+                        <label class="input-label">시작 시간</label>
+                        <select name="start_time" class="modal-select">
+                            {% for h in range(9, 23) %}
+                            <option value="{{ h }}:00">{{ h }}:00</option>
+                            <option value="{{ h }}:30">{{ h }}:30</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="input-group" style="flex:1;">
+                        <label class="input-label">종료 시간</label>
+                        <select name="end_time" class="modal-select">
+                            {% for h in range(9, 23) %}
+                            <option value="{{ h }}:00">{{ h }}:00</option>
+                            <option value="{{ h }}:30">{{ h }}:30</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top:10px;">
+                    <label class="input-label">예약자 정보</label>
+                    <input type="text" class="modal-input" value="{{ user }} (자동입력)" readonly style="border-color:#333; color:#666;">
+                </div>
+
+                <button type="submit" class="btn-reserve-submit">예약 완료</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 모달 제어
+        function openModal() { document.getElementById("reserveModal").style.display = "block"; }
+        function closeModal() { document.getElementById("reserveModal").style.display = "none"; }
+        
+        // 악기 탭 선택
+        function selectInstrument(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('modal_inst_name').value = name;
+            // 여기서 해당 악기의 데이터를 다시 불러오는 로직을 추가할 수 있습니다.
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById("reserveModal")) { closeModal(); }
+        }
+    </script>
 </body>
 </html>
