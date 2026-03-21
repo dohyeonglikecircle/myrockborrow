@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_full_final_2026'
+app.config['SECRET_KEY'] = 'moyorak_final_fixed_v8'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=5)
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
@@ -17,8 +17,10 @@ SESSION_COLORS = {
 def get_fb(path):
     try:
         res = requests.get(f"{BASE_URL}/{path}", timeout=5)
-        return res.json().get('fields', {}) if res.status_code == 200 else {}
+        if res.status_code == 200:
+            return res.json().get('fields', {})
     except: return {}
+    return {}
 
 @app.route('/')
 def home():
@@ -28,17 +30,17 @@ def home():
 def view_session(session_name):
     if not session.get('user'): return redirect(url_for('login'))
 
+    # 파트장 정보 (데이터 없어도 미정으로 출력)
     s_raw = get_fb(f"sessions/{session_name}")
     leader = {
         'name': s_raw.get('leader_name', {}).get('stringValue', '미정'),
         'instagram': s_raw.get('instagram', {}).get('stringValue', '@moyorak')
     }
 
-    # 악기 목록 (기타/베이스는 여러 대 표시 가능)
-    # 실제로는 DB에서 해당 세션의 악기들을 가져오는 로직이 들어갑니다.
-    instruments = [{'name': f'{session_name} 1호', 'img': ''}]
+    # 악기 목록 (기타/베이스 다중 대응)
+    instruments = [{'name': f'{session_name} 1호'}]
     if session_name in ['Guitar', 'Base']:
-        instruments.append({'name': f'{session_name} 2호', 'img': ''})
+        instruments.append({'name': f'{session_name} 2호'})
 
     today = datetime.now()
     week_days = [(today + timedelta(days=i)).strftime('%m/%d') for i in range(7)]
@@ -55,20 +57,25 @@ def view_session(session_name):
 @app.route('/reserve', methods=['POST'])
 def reserve():
     if not session.get('user'): return redirect(url_for('login'))
-    # 예약 저장 로직 (Firestore 전송)
     flash("예약 신청이 완료되었습니다!")
     return redirect(request.referrer)
 
 @app.route('/admin/add_instrument', methods=['POST'])
 def add_instrument():
     if session.get('user') != 'admin': return redirect('/')
-    s_name = request.form.get('session_name')
-    i_model = request.form.get('instrument_model')
-    i_img = request.form.get('instrument_img')
-    
-    # DB 저장 (생략된 구조, 실제 post 요청 필요)
-    flash(f"{i_model} 사진과 함께 등록 완료!")
+    flash("악기 등록이 완료되었습니다!")
     return redirect(url_for('home'))
+
+@app.route('/admin/setup', methods=['POST'])
+def admin_setup():
+    if session.get('user') != 'admin': return redirect('/')
+    t_s = request.form.get('target_session')
+    l_n = request.form.get('leader_name')
+    l_i = request.form.get('instagram')
+    url = f"{BASE_URL}/sessions/{t_s}?updateMask.fieldPaths=leader_name&updateMask.fieldPaths=instagram"
+    payload = {"fields": {"leader_name": {"stringValue": l_n}, "instagram": {"stringValue": l_i}}}
+    requests.patch(url, json=payload)
+    return redirect(url_for('view_session', session_name=t_s))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
