@@ -14,20 +14,11 @@
         }
 
         body { background-color: var(--bg-black); color: #ffffff; font-family: 'Pretendard', sans-serif; margin: 0; overflow-x: hidden; }
-        
         .flex-wrapper { display: flex; min-height: 100vh; }
 
         /* --- 중앙 메인 영역 --- */
         .main-content { flex: 3; padding: 40px; border-right: 1px solid var(--border-color); }
         .session-title { font-size: 2.5em; color: var(--point-color); margin-bottom: 30px; font-weight: 800; }
-
-        /* 악기 선택 탭 */
-        .inst-tabs { display: flex; gap: 12px; margin-bottom: 25px; }
-        .tab { 
-            padding: 12px 25px; background: var(--card-bg); border: 1px solid var(--border-color); 
-            border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: bold;
-        }
-        .tab.active { border-color: var(--point-color); color: var(--point-color); box-shadow: 0 0 10px rgba(243, 156, 18, 0.2); }
 
         /* 주간 캘린더 그리드 */
         .calendar-grid { 
@@ -35,47 +26,49 @@
             border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color);
             background: var(--bg-black);
         }
-        .grid-cell { border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); height: 50px; position: relative; }
-        .time-label { text-align: right; padding-right: 10px; font-size: 12px; color: var(--text-gray); line-height: 50px; background: #050505; }
+        .grid-cell { border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); height: 50px; position: relative; cursor: pointer; }
+        .grid-cell:hover { background: #0a0a0a; }
+        .time-label { text-align: right; padding-right: 10px; font-size: 12px; color: var(--text-gray); line-height: 50px; background: #050505; cursor: default; }
         .header-cell { background: var(--card-bg); text-align: center; font-weight: bold; padding: 15px 0; border-bottom: 2px solid var(--point-color); font-size: 14px; }
 
         /* --- 오른쪽 사이드바 --- */
         .sidebar { flex: 1; padding: 40px; background: #050505; position: sticky; top: 0; height: 100vh; }
         .info-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 15px; padding: 25px; margin-bottom: 20px; }
-        .info-card h3 { margin-top: 0; color: var(--point-color); font-size: 1.1em; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-        .insta-tag { color: #3498db; text-decoration: none; font-weight: bold; }
-
         .btn-open-modal { 
             width: 100%; background: var(--point-color); color: #000; border: none; padding: 16px; 
             border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1em;
         }
 
-        /* --- 예약 팝업 모달 (이미지 기반 디자인) --- */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
+        /* --- 예약 팝업 모달 (목록 선택형) --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); }
         .modal-content { 
-            background: #1c1c1c; margin: 8% auto; padding: 35px; border-radius: 25px; 
-            width: 450px; border: 1px solid #333; position: relative;
+            background: #1c1c1c; margin: 5% auto; padding: 35px; border-radius: 25px; 
+            width: 480px; border: 1px solid #333; position: relative;
         }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px; }
         .modal-header h2 { margin: 0; font-size: 1.5em; color: #fff; }
         .close-btn { color: var(--text-gray); font-size: 30px; cursor: pointer; }
 
-        .input-group { margin-bottom: 20px; }
-        .input-label { display: block; color: var(--text-gray); font-size: 0.85em; margin-bottom: 8px; margin-left: 5px; }
-        .modal-input { 
-            width: 100%; background: #111; color: #fff; border: 1.5px solid var(--point-color); 
-            padding: 14px; border-radius: 12px; font-size: 1em; box-sizing: border-box; outline: none;
+        .input-label { display: block; color: var(--text-gray); font-size: 0.85em; margin-bottom: 10px; }
+        
+        /* 날짜 목록 스타일 (버튼형 리스트) */
+        .date-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; margin-bottom: 25px; padding-right: 5px; }
+        .date-item { 
+            background: #111; border: 1.5px solid #333; color: #fff; padding: 12px; 
+            border-radius: 12px; cursor: pointer; text-align: center; transition: 0.2s; font-weight: 500;
         }
-        .time-flex { display: flex; gap: 15px; }
+        .date-item:hover { border-color: var(--point-color); background: #1a1a1a; }
+        .date-item.selected { border-color: var(--point-color); background: rgba(243, 156, 18, 0.1); color: var(--point-color); font-weight: bold; }
+
+        .time-flex { display: flex; gap: 15px; margin-bottom: 20px; }
         .modal-select { 
             flex: 1; background: #111; color: #fff; border: 1.5px solid var(--point-color); 
-            padding: 14px; border-radius: 12px; font-size: 1em; outline: none;
+            padding: 14px; border-radius: 12px; font-size: 1em; outline: none; text-align: center;
         }
 
         .btn-reserve-submit { 
             width: 100%; background: var(--point-color); color: #000; border: none; 
-            padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1em; 
-            margin-top: 30px; cursor: pointer;
+            padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1em; cursor: pointer;
         }
 
         /* 보컬 전용 */
@@ -89,26 +82,16 @@
         <div class="vocal-hero">
             <div class="info-card" style="width:400px; text-align:center;">
                 <h1 style="font-size: 4em; color: var(--point-color); margin: 0;">VOCAL</h1>
-                <p style="font-size: 1.2em;">👤 파트장: <strong>{{ leader.name }}</strong></p>
-                <p>인스타그램: <a href="#" class="insta-tag">{{ leader.instagram }}</a></p>
-                <p style="color: var(--text-gray); margin-top: 30px;">보컬 세션은 예약이 필요하지 않습니다.</p>
-                <br><a href="/" style="color: var(--text-gray); text-decoration: none; font-size: 0.8em;">← 홈으로</a>
+                <p>👤 파트장: <strong>{{ leader.name }}</strong></p>
+                <p style="color: var(--text-gray);">보컬 세션은 예약이 필요하지 않습니다.</p>
+                <br><a href="/" style="color: var(--text-gray); text-decoration: none;">← 홈으로</a>
             </div>
         </div>
         {% else %}
         <div class="main-content">
             <h1 class="session-title">{{ session_name }}</h1>
-            <div class="inst-tabs">
-                {% if instruments %}
-                    {% for inst in instruments %}
-                    <div class="tab {% if loop.first %}active{% endif %}" onclick="selectInstrument('{{ inst.name }}')">{{ inst.name }}</div>
-                    {% endfor %}
-                {% else %}
-                    <div class="tab active">{{ session_name }} 공용</div>
-                {% endif %}
-            </div>
-
-            <div class="calendar-grid">
+            
+            <div class="calendar-grid" onclick="openModal()">
                 <div class="grid-cell header-cell">시간</div>
                 {% for day in week_days %}<div class="grid-cell header-cell">{{ day }}</div>{% endfor %}
                 {% for h in range(9, 23) %}
@@ -124,13 +107,12 @@
             <div class="info-card">
                 <h3>👤 파트장 정보</h3>
                 <p>이름: <strong>{{ leader.name }}</strong></p>
-                <p>인스타: <a href="#" class="insta-tag">{{ leader.instagram }}</a></p>
+                <p>인스타: <span style="color: #3498db;">{{ leader.instagram }}</span></p>
             </div>
             <div class="info-card">
                 <h3>📅 일정 관리</h3>
                 <button class="btn-open-modal" onclick="openModal()">새로운 일정 등록</button>
             </div>
-            <center><a href="/" style="color: var(--text-gray); text-decoration: none; font-size: 0.8em;">← 홈으로 가기</a></center>
         </div>
         {% endif %}
     </div>
@@ -142,16 +124,16 @@
                 <span class="close-btn" onclick="closeModal()">&times;</span>
             </div>
             
-            <form action="/reserve" method="POST">
-                <input type="hidden" name="inst_name" id="modal_inst_name" value="{{ instruments[0].name if instruments else session_name }}">
+            <form action="/reserve" method="POST" id="reserveForm">
+                <input type="hidden" name="inst_name" value="{{ session_name }} 공용">
+                <input type="hidden" name="date" id="selectedDateInput" required>
                 
-                <div class="input-group">
-                    <label class="input-label">날짜 선택 (향후 7일 내)</label>
-                    <input type="date" name="date" id="reservationDate" class="modal-input" required>
-                </div>
+                <label class="input-label">예약 날짜 선택 (앞으로 7일)</label>
+                <div class="date-list" id="dateListContainer">
+                    </div>
 
                 <div class="time-flex">
-                    <div class="input-group" style="flex:1;">
+                    <div style="flex:1;">
                         <label class="input-label">시작 시간</label>
                         <select name="start_time" class="modal-select">
                             {% for h in range(9, 23) %}
@@ -160,7 +142,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="input-group" style="flex:1;">
+                    <div style="flex:1;">
                         <label class="input-label">종료 시간</label>
                         <select name="end_time" class="modal-select">
                             {% for h in range(9, 23) %}
@@ -171,38 +153,60 @@
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label class="input-label">예약자</label>
-                    <input type="text" class="modal-input" value="{{ user }}님" readonly style="border-color:#333; color:#666;">
-                </div>
-
-                <button type="submit" class="btn-reserve-submit">예약 완료</button>
+                <button type="submit" class="btn-reserve-submit">예약 신청 완료</button>
             </form>
         </div>
     </div>
 
     <script>
-        function setDateLimit() {
-            const dateInput = document.getElementById('reservationDate');
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            const future = new Date();
-            future.setDate(now.getDate() + 7);
-            const futureStr = future.toISOString().split('T')[0];
+        const dateInput = document.getElementById('selectedDateInput');
+        const dateContainer = document.getElementById('dateListContainer');
+
+        // 오늘부터 7일간의 날짜 목록 생성
+        function generateDateList() {
+            dateContainer.innerHTML = '';
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
             
-            dateInput.min = todayStr;
-            dateInput.max = futureStr;
-            dateInput.value = todayStr;
+            for (let i = 0; i <= 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() + i);
+                
+                const yyyy = date.getFullYear();
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                const fullDate = `${yyyy}-${mm}-${dd}`;
+                const dayName = days[date.getDay()];
+                
+                const dateBtn = document.createElement('div');
+                dateBtn.className = 'date-item';
+                dateBtn.innerText = `${mm}월 ${dd}일 (${dayName})`;
+                if (i === 0) dateBtn.innerText += " - 오늘";
+
+                dateBtn.onclick = () => {
+                    document.querySelectorAll('.date-item').forEach(el => el.classList.remove('selected'));
+                    dateBtn.classList.add('selected');
+                    dateInput.value = fullDate;
+                };
+
+                // 기본값: 오늘 선택
+                if (i === 0) {
+                    dateBtn.classList.add('selected');
+                    dateInput.value = fullDate;
+                }
+
+                dateContainer.appendChild(dateBtn);
+            }
         }
 
-        function openModal() { setDateLimit(); document.getElementById("reserveModal").style.display = "block"; }
-        function closeModal() { document.getElementById("reserveModal").style.display = "none"; }
-        function selectInstrument(name) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('modal_inst_name').value = name;
+        function openModal() { 
+            generateDateList();
+            document.getElementById("reserveModal").style.display = "block"; 
         }
-        window.onclick = function(event) { if (event.target == document.getElementById("reserveModal")) { closeModal(); } }
+        function closeModal() { document.getElementById("reserveModal").style.display = "none"; }
+        
+        window.onclick = function(event) {
+            if (event.target == document.getElementById("reserveModal")) { closeModal(); }
+        }
     </script>
 </body>
 </html>
