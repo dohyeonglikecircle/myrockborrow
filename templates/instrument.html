@@ -12,13 +12,14 @@
         .inst-card { background: #111; border: 1.5px solid #333; padding: 12px; border-radius: 15px; min-width: 150px; text-align: center; cursor: pointer; position: relative; }
         .inst-card.active { border-color: {{ color }}; background: rgba(255,255,255,0.05); }
         .inst-card img { width: 100%; height: 90px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; }
-        /* ❌ 삭제 버튼 스타일 */
-        .del-btn { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; z-index: 10; }
+        .del-btn { position: absolute; top: 5px; right: 5px; background: #e74c3c; color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; z-index: 10; font-weight: bold; }
         .grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); border: 1px solid #222; }
         .cell { border: 0.5px solid #222; height: 45px; }
-        .info-box { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+        .info-box { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; position: relative; }
+        .edit-trigger { position: absolute; top: 15px; right: 15px; font-size: 11px; color: #555; cursor: pointer; border: 1px solid #333; padding: 3px 6px; border-radius: 4px; }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
-        .m-content { background: #1c1c1c; margin: 3% auto; padding: 35px; border-radius: 25px; width: 450px; border: 1px solid #333; }
+        .m-content { background: #1c1c1c; margin: 10% auto; padding: 35px; border-radius: 25px; width: 400px; border: 1px solid #333; }
+        .modal-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -29,23 +30,43 @@
                 {% for inst in instruments %}
                 <div class="inst-card {% if loop.first %}active{% endif %}" onclick="selectInst(this, '{{ inst.name }}')">
                     {% if is_admin and inst.id != 'default' %}
-                    <button class="del-btn" onclick="event.stopPropagation(); if(confirm('삭제할까요?')) location.href='/admin/delete_instrument/{{ inst.id }}'">×</button>
+                    <button class="del-btn" onclick="event.stopPropagation(); if(confirm('이 악기를 삭제하시겠습니까?')) location.href='/admin/delete_instrument/{{ inst.id }}'">×</button>
                     {% endif %}
-                    {% if inst.img %}<img src="{{ inst.img }}" alt="악기">{% else %}<div style="height:90px; background:#0a0a0a; border-radius:8px;"></div>{% endif %}
+                    {% if inst.img %}<img src="{{ inst.img }}" alt="악기">{% else %}<div style="height:90px; background:#0a0a0a; border-radius:8px; line-height:90px; font-size:11px; color:#333;">NO IMAGE</div>{% endif %}
                     <span>{{ inst.name }}</span>
                 </div>
                 {% endfor %}
             </div>
             <div class="grid" onclick="openReserveModal()">
-                <div class="cell"></div>{% for d in week_days %}<div class="cell" style="text-align:center;">{{ d }}</div>{% endfor %}
-                {% for h in range(0, 24) %}<div class="cell" style="font-size:10px; text-align:right; color:#555;">{{ h }}:00</div>{% for d in range(7) %}<div class="cell"></div>{% endfor %}{% endfor %}
+                <div class="cell"></div>{% for d in week_days %}<div class="cell" style="text-align:center; font-size:12px;">{{ d }}</div>{% endfor %}
+                {% for h in range(0, 24) %}<div class="cell" style="font-size:10px; text-align:right; color:#555; padding-right:5px; line-height:45px;">{{ h }}:00</div>{% for d in range(7) %}<div class="cell"></div>{% endfor %}{% endfor %}
             </div>
         </div>
         <div class="sidebar">
-            <div class="info-box"><h3>👤 파트장</h3><p>{{ leader.name }} ({{ leader.instagram }})</p></div>
-            <button onclick="openReserveModal()" style="width:100%; padding:20px; background:{{ color }}; border:none; font-weight:bold; border-radius:15px; cursor:pointer;">🗓️ 예약하기</button>
+            <div class="info-box">
+                {% if is_admin %}<span class="edit-trigger" onclick="openEditModal()">수정</span>{% endif %}
+                <h3>👤 파트장 정보</h3>
+                <p><strong>이름:</strong> {{ leader.name }}</p>
+                <p><strong>인스타:</strong> <span style="color:{{ color }};">{{ leader.instagram }}</span></p>
+            </div>
+            <button onclick="openReserveModal()" style="width:100%; padding:20px; background:{{ color }}; border:none; font-weight:bold; border-radius:15px; cursor:pointer; color:#000;">🗓️ 예약하기</button>
+            <center><br><a href="/" style="color:#444; text-decoration:none; font-size:0.8em;">← 홈으로 돌아가기</a></center>
         </div>
     </div>
+
+    <div id="editModal" class="modal"><div class="m-content">
+        <h2 style="color:{{ color }};">파트장 정보 수정</h2>
+        <form action="/admin/setup" method="POST">
+            <input type="hidden" name="target_session" value="{{ session_name }}">
+            <label style="color:#666; font-size:12px;">이름</label>
+            <input type="text" name="leader_name" class="modal-input" value="{{ leader.name }}" required>
+            <label style="color:#666; font-size:12px;">인스타그램</label>
+            <input type="text" name="instagram" class="modal-input" value="{{ leader.instagram }}" required>
+            <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; color:#000; font-weight:bold; border-radius:10px; margin-top:15px;">정보 저장하기</button>
+            <button type="button" onclick="closeEditModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">취소</button>
+        </form>
+    </div></div>
+
     <div id="reserveModal" class="modal"><div class="m-content">
         <h2>예약 등록</h2>
         <form action="/reserve" method="POST">
@@ -54,8 +75,11 @@
             <button type="button" onclick="closeReserveModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
         </form>
     </div></div>
+
     <script>
         function selectInst(el, name) { document.querySelectorAll('.inst-card').forEach(c => c.classList.remove('active')); el.classList.add('active'); document.getElementById('selectedInstName').value = name; }
+        function openEditModal() { document.getElementById('editModal').style.display = 'block'; }
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
         function openReserveModal() { document.getElementById('reserveModal').style.display = 'block'; }
         function closeReserveModal() { document.getElementById('reserveModal').style.display = 'none'; }
     </script>

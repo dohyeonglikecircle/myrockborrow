@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_final_system_2026'
+app.config['SECRET_KEY'] = 'moyorak_final_system_fixed_v12'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=5)
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
@@ -35,31 +35,65 @@ def home():
 @app.route('/session/<session_name>')
 def view_session(session_name):
     if not session.get('user'): return redirect(url_for('login'))
+    
+    # 파트장 정보 로드
     s_raw = get_fb(f"sessions/{session_name}")
     leader = {
         'name': s_raw.get('leader_name', {}).get('stringValue', '미정'),
         'instagram': s_raw.get('instagram', {}).get('stringValue', '@moyorak')
     }
+    
+    # 악기 목록 로드
     all_docs = get_fb_collection("instruments")
     instruments = []
     for doc in all_docs:
         f = doc.get('fields', {})
-        doc_id = doc.get('name').split('/')[-1] # 삭제를 위한 문서 ID 추출
+        doc_id = doc.get('name').split('/')[-1]
         if f.get('session', {}).get('stringValue') == session_name:
             instruments.append({
                 'id': doc_id,
                 'name': f.get('model_name', {}).get('stringValue', '이름 없음'),
                 'img': f.get('image_url', {}).get('stringValue', '')
             })
+            
     if not instruments and session_name != 'Vocal':
         instruments = [{'name': f'{session_name} 공용', 'img': '', 'id': 'default'}]
 
     today = datetime.now()
     week_days = [(today + timedelta(days=i)).strftime('%m/%d') for i in range(7)]
+    
     return render_template('instrument.html', session_name=session_name, leader=leader, 
                            instruments=instruments, week_days=week_days, 
                            color=SESSION_COLORS.get(session_name, '#333'), 
                            user=session.get('user'), is_admin=(session.get('user') == 'admin'))
+
+# 🔥 [수정됨] 파트장 정보 업데이트 로직
+@app.route('/admin/setup', methods=['POST'])
+def admin_setup():
+    if session.get('user') != 'admin': return redirect('/')
+    
+    t_s = request.form.get('target_session')
+    l_n = request.form.get('leader_name')
+    l_i = request.form.get('instagram')
+    
+    # 파이어베이스 전송 데이터 규격 (fields 포함)
+    payload = {
+        "fields": {
+            "leader_name": {"stringValue": l_n},
+            "instagram": {"stringValue": l_i}
+        }
+    }
+    
+    # PATCH 요청으로 특정 필드만 업데이트
+    update_url = f"{BASE_URL}/sessions/{t_s}?updateMask.fieldPaths=leader_name&updateMask.fieldPaths=instagram"
+    res = requests.patch(update_url, json=payload)
+    
+    if res.status_code == 200:
+        flash(f"{t_s} 파트장 정보가 수정되었습니다.")
+    else:
+        flash("수정 실패. 파이어베이스 설정을 확인하세요.")
+        
+    return redirect(url_for('view_session', session_name=t_s))
 
 @app.route('/admin/add_instrument', methods=['POST'])
 def add_instrument():
@@ -70,15 +104,12 @@ def add_instrument():
         "image_url": {"stringValue": request.form.get('instrument_img')}
     }}
     requests.post(f"{BASE_URL}/instruments", json=payload)
-    flash("등록 완료!")
     return redirect(url_for('home'))
 
-# 🔥 악기 삭제 기능
 @app.route('/admin/delete_instrument/<doc_id>')
 def delete_instrument(doc_id):
     if session.get('user') != 'admin': return redirect('/')
     requests.delete(f"{BASE_URL}/instruments/{doc_id}")
-    flash("악기가 삭제되었습니다.")
     return redirect(request.referrer)
 
 @app.route('/login', methods=['GET', 'POST'])
