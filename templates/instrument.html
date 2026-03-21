@@ -8,15 +8,23 @@
         .wrapper { display: flex; min-height: 100vh; }
         .main { flex: 3; padding: 40px; border-right: 1px solid #222; }
         .sidebar { flex: 1; padding: 40px; background: #050505; position: sticky; top: 0; height: 100vh; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab { padding: 10px 20px; background: #111; border: 1px solid #333; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .tab.active { border-color: {{ color }}; color: {{ color }}; }
+        
+        /* 🎸 멀티 악기 카드 탭 스타일 */
+        .inst-tabs { display: flex; gap: 15px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 10px; }
+        .inst-card { 
+            background: #111; border: 1.5px solid #333; padding: 10px; border-radius: 12px; 
+            min-width: 140px; text-align: center; cursor: pointer; transition: 0.2s;
+        }
+        .inst-card.active { border-color: {{ color }}; background: rgba(255,255,255,0.05); }
+        .inst-card img { width: 100%; height: 80px; object-fit: contain; border-radius: 8px; margin-bottom: 8px; background: #000; }
+        .inst-card span { font-size: 0.85em; font-weight: bold; color: #eee; }
+
         .grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); border: 1px solid #222; }
         .cell { border: 0.5px solid #222; height: 45px; position: relative; cursor: pointer; }
         .cell:hover { background: #111; }
-        .info-box { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; position: relative; }
-        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
-        .m-content { background: #1c1c1c; margin: 5% auto; padding: 35px; border-radius: 25px; width: 450px; border: 1px solid #333; }
+        .info-box { background: #111; padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
+        .m-content { background: #1c1c1c; margin: 3% auto; padding: 35px; border-radius: 25px; width: 450px; border: 1px solid #333; }
         .date-item { padding: 12px; border: 1px solid #333; margin-bottom: 8px; cursor: pointer; text-align: center; border-radius: 10px; }
         .date-item.selected { border-color: {{ color }}; background: rgba(255,255,255,0.05); color: {{ color }}; font-weight: bold; }
     </style>
@@ -25,21 +33,30 @@
     <div class="wrapper">
         {% if session_name == 'Vocal' %}
         <div style="width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-            <h1 style="font-size: 5em; color: {{ color }};">VOCAL</h1>
+            <h1 style="font-size: 5em; color: {{ color }}; margin: 0;">VOCAL</h1>
             <div class="info-box" style="width:350px; text-align:center;">
                 <p>👤 파트장: <strong>{{ leader.name }}</strong></p>
-                <p>Instagram: {{ leader.instagram }}</p>
+                <p>Instagram: <span style="color:{{ color }};">{{ leader.instagram }}</span></p>
             </div>
             <a href="/" style="color:#444; text-decoration:none;">← 홈으로</a>
         </div>
         {% else %}
         <div class="main">
-            <h1 style="color: {{ color }}; margin: 0 0 30px 0;">{{ session_name }}</h1>
-            <div class="tabs">
+            <h1 style="color: {{ color }}; margin-bottom: 20px;">{{ session_name }} Reservation</h1>
+            
+            <div class="inst-tabs">
                 {% for inst in instruments %}
-                <div class="tab {% if loop.first %}active{% endif %}">{{ inst.name }}</div>
+                <div class="inst-card {% if loop.first %}active{% endif %}" onclick="selectInst(this, '{{ inst.name }}')">
+                    {% if inst.img %}
+                    <img src="{{ inst.img }}" alt="Instrument">
+                    {% else %}
+                    <div style="height:80px; background:#000; border-radius:8px; line-height:80px; font-size:10px; color:#333;">No Image</div>
+                    {% endif %}
+                    <span>{{ inst.name }}</span>
+                </div>
                 {% endfor %}
             </div>
+
             <div class="grid" onclick="openReserveModal()">
                 <div class="cell" style="background:#111;"></div>
                 {% for d in week_days %}<div class="cell" style="background:#111; text-align:center; font-weight:bold; font-size:12px;">{{ d }}</div>{% endfor %}
@@ -51,7 +68,6 @@
         </div>
         <div class="sidebar">
             <div class="info-box">
-                {% if is_admin %}<button onclick="document.getElementById('edit-leader-modal').style.display='block'" style="position:absolute; right:15px; top:15px; background:none; border:1px solid #444; color:#555; cursor:pointer; border-radius:4px; font-size:10px;">수정</button>{% endif %}
                 <h3>👤 파트장 정보</h3>
                 <p>이름: {{ leader.name }}</p>
                 <p>인스타: {{ leader.instagram }}</p>
@@ -66,16 +82,25 @@
         <div class="m-content">
             <h2 style="margin-top:0;">새로운 일정 등록</h2>
             <form action="/reserve" method="POST">
-                <input type="hidden" name="inst_name" value="{{ session_name }} 공용">
+                <input type="hidden" name="inst_name" id="selectedInstName" value="{{ instruments[0].name if instruments else session_name }}">
                 <input type="hidden" name="date" id="reserveDate" required>
-                <div id="datePickList" style="margin:10px 0; max-height:180px; overflow-y:auto;"></div>
+                
+                <label style="color:#888; font-size:0.8em;">날짜 선택</label>
+                <div id="datePickList" style="margin:10px 0; max-height:180px; overflow-y:auto; padding-right:5px;"></div>
+                
                 <div style="display:flex; gap:10px; margin-top:20px;">
-                    <div style="flex:1;"><select name="start_time" style="width:100%; padding:12px; background:#000; color:#fff; border:1px solid {{ color }};">
-                        {% for h in range(0, 24) %}{% set ts = "%02d" % h %}<option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>{% endfor %}
-                    </select></div>
-                    <div style="flex:1;"><select name="end_time" style="width:100%; padding:12px; background:#000; color:#fff; border:1px solid {{ color }};">
-                        {% for h in range(0, 24) %}{% set ts = "%02d" % h %}<option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>{% endfor %}
-                    </select></div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.8em; color:#888;">시작 (24H)</label>
+                        <select name="start_time" style="width:100%; padding:12px; background:#000; color:#fff; border:1px solid {{ color }}; border-radius:10px;">
+                            {% for h in range(0, 24) %}{% set ts = "%02d" % h %}<option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.8em; color:#888;">종료 (24H)</label>
+                        <select name="end_time" style="width:100%; padding:12px; background:#000; color:#fff; border:1px solid {{ color }}; border-radius:10px;">
+                            {% for h in range(0, 24) %}{% set ts = "%02d" % h %}<option value="{{ ts }}:00">{{ ts }}:00</option><option value="{{ ts }}:30">{{ ts }}:30</option>{% endfor %}
+                        </select>
+                    </div>
                 </div>
                 <button type="submit" style="width:100%; padding:18px; background:{{ color }}; border:none; font-weight:bold; margin-top:30px; border-radius:12px;">예약 신청 완료</button>
                 <button type="button" onclick="closeReserveModal()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
@@ -83,20 +108,13 @@
         </div>
     </div>
 
-    <div id="edit-leader-modal" class="modal">
-        <div class="m-content">
-            <h2>파트장 정보 수정</h2>
-            <form action="/admin/setup" method="POST">
-                <input type="hidden" name="target_session" value="{{ session_name }}">
-                <input type="text" name="leader_name" value="{{ leader.name }}" style="width:100%; padding:12px; margin-bottom:10px; background:#000; color:#fff; border:1px solid #333;">
-                <input type="text" name="instagram" value="{{ leader.instagram }}" style="width:100%; padding:12px; margin-bottom:20px; background:#000; color:#fff; border:1px solid #333;">
-                <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; font-weight:bold; border-radius:10px;">저장</button>
-                <button type="button" onclick="document.getElementById('edit-leader-modal').style.display='none'" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">취소</button>
-            </form>
-        </div>
-    </div>
-
     <script>
+        function selectInst(el, name) {
+            document.querySelectorAll('.inst-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('selectedInstName').value = name;
+        }
+
         function openReserveModal() {
             const container = document.getElementById('datePickList');
             container.innerHTML = '';

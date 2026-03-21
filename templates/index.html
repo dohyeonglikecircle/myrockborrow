@@ -10,10 +10,10 @@
         .nav-btn { background: #222; border: 1px solid #444; color: #fff; padding: 8px 15px; border-radius: 6px; text-decoration: none; font-size: 0.9em; margin-left: 5px; }
         .main-content { padding: 60px 20px; }
         .btn-container { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 40px 0; }
-        .session-btn { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 18px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; transition: 0.3s; }
+        .session-btn { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 18px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; transition: 0.2s; }
         .session-btn:hover { border-color: #f39c12; background: #222; }
         .admin-btn { background: #e74c3c; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 12px; padding: 18px 30px; }
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
         .modal-content { background: #1a1a1a; margin: 10% auto; padding: 30px; border-radius: 20px; width: 380px; border: 1px solid #333; text-align: left; }
         .modal-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
     </style>
@@ -40,16 +40,18 @@
 
     <div id="adminModal" class="modal">
         <div class="modal-content">
-            <h2 style="color:#e74c3c; margin-top:0;">🎹 악기 정보 등록</h2>
+            <h2 style="color:#e74c3c; margin-top:0;">🎹 신규 악기 모델 등록</h2>
             <form action="/admin/add_instrument" method="POST">
                 <select name="session_name" class="modal-input">
-                    <option value="Guitar">Guitar (기타)</option>
-                    <option value="Base">Base (베이스)</option>
+                    <option value="Guitar">기타 (Guitar)</option>
+                    <option value="Base">베이스 (Base)</option>
+                    <option value="Drum">드럼 (Drum)</option>
+                    <option value="Keyboard">키보드 (Keyboard)</option>
                 </select>
-                <input type="text" name="instrument_model" class="modal-input" placeholder="악기 모델명" required>
-                <input type="text" name="instrument_img" class="modal-input" placeholder="악기 사진 URL">
-                <button type="submit" style="width:100%; padding:15px; background:#e74c3c; border:none; color:#fff; font-weight:bold; border-radius:10px;">등록하기</button>
-                <button type="button" onclick="closeAdmin()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
+                <input type="text" name="instrument_model" class="modal-input" placeholder="모델명 (예: Fender Stratocaster)" required>
+                <input type="text" name="instrument_img" class="modal-input" placeholder="사진 URL (Imgur 등)">
+                <button type="submit" style="width:100%; padding:15px; background:#e74c3c; border:none; color:#fff; font-weight:bold; border-radius:10px; cursor:pointer;">정보 저장 및 등록</button>
+                <button type="button" onclick="closeAdmin()" style="width:100%; background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">닫기</button>
             </form>
         </div>
     </div>
