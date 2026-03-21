@@ -49,8 +49,8 @@
         <h2 style="color:#e74c3c; margin-top:0;">신규 악기 등록</h2>
         <form action="/admin/add_instrument" method="POST">
             <select name="session_name" class="modal-input"><option value="Guitar">Guitar</option><option value="Base">Base</option><option value="Drum">Drum</option><option value="Keyboard">Keyboard</option></select>
-            <input type="text" name="instrument_model" class="modal-input" placeholder="모델명" required>
-            <input type="text" name="instrument_img" class="modal-input" placeholder="사진 URL">
+            <input type="text" name="instrument_model" class="modal-input" placeholder="악기 모델명" required>
+            <input type="text" name="instrument_img" class="modal-input" placeholder="사진 직접다운로드 URL">
             <button type="submit" style="width:100%; padding:15px; background:#e74c3c; border:none; color:#fff; font-weight:bold; border-radius:10px;">등록</button>
             <button type="button" onclick="closeAdmin()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
         </form>

@@ -4,13 +4,18 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_reservation_fix_v15'
+app.config['SECRET_KEY'] = 'moyorak_display_fix_v16'
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
 BASE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents"
 
 SESSION_COLORS = {
     'Guitar': '#e67e22', 'Base': '#f1c40f', 'Drum': '#3498db', 'Keyboard': '#9b59b6', 'Vocal': '#2ecc71'
+}
+
+# 세션별 약자 맵핑
+SESSION_MAP = {
+    'Vocal': 'V', 'Guitar': 'G', 'Base': 'B', 'Drum': 'D', 'Keyboard': 'K'
 }
 
 def get_fb_collection(collection):
@@ -47,11 +52,14 @@ def login():
             session['user'] = 'admin'
             return redirect(url_for('home'))
         res = requests.get(f"{BASE_URL}/users/{u}")
-        if res.status_code == 200 and res.json().get('fields', {}).get('password', {}).get('stringValue') == p:
-            session['user'] = u
-            session['user_name'] = res.json().get('fields', {}).get('name', {}).get('stringValue')
-            session['user_gen'] = res.json().get('fields', {}).get('generation', {}).get('stringValue')
-            return redirect(url_for('home'))
+        if res.status_code == 200:
+            f = res.json().get('fields', {})
+            if f.get('password', {}).get('stringValue') == p:
+                session['user'] = u
+                session['user_name'] = f.get('name', {}).get('stringValue')
+                session['user_gen'] = f.get('generation', {}).get('stringValue')
+                session['user_session'] = f.get('session', {}).get('stringValue')
+                return redirect(url_for('home'))
     return render_template('login.html')
 
 @app.route('/session/<session_name>')
@@ -96,7 +104,13 @@ def view_session(session_name):
 @app.route('/reserve', methods=['POST'])
 def reserve():
     if not session.get('user'): return redirect(url_for('login'))
-    u_display = f"{session.get('user_gen', '')}기 {session.get('user_name', session.get('user'))}"
+    
+    # 형식 변환: 기수 + 세션약자 + 이름 (예: 28V 테스트)
+    gen = session.get('user_gen', '')
+    s_short = SESSION_MAP.get(session.get('user_session', ''), '')
+    name = session.get('user_name', '')
+    u_display = f"{gen}{s_short} {name}"
+    
     payload = {"fields": {
         "session": {"stringValue": request.form.get('session_name')},
         "inst_name": {"stringValue": request.form.get('inst_name')},
