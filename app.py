@@ -4,57 +4,70 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_2026_final_v4'
+app.config['SECRET_KEY'] = 'moyorak_black_edition_2026'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=3)
 
-# Vercel 환경변수
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
 BASE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents"
 
 def get_fb(path):
-    """Firestore 데이터를 안전하게 가져오는 함수"""
     try:
         res = requests.get(f"{BASE_URL}/{path}", timeout=5)
-        if res.status_code == 200:
-            return res.json().get('fields', {})
+        return res.json().get('fields', {}) if res.status_code == 200 else {}
     except: return {}
-    return {}
 
 @app.route('/')
 def home():
     return render_template('index.html', user=session.get('user'))
 
-# --- 🎸 세션 상세 페이지 (파트장 정보 + 악기 예약) ---
+# --- 🎸 세션 상세 페이지 ---
 @app.route('/session/<session_name>')
 def view_session(session_name):
-    if not session.get('user'):
-        flash("로그인이 필요합니다.")
-        return redirect(url_for('login'))
+    if not session.get('user'): return redirect(url_for('login'))
 
-    # 1. 오른쪽 사이드바용 파트장 정보
     s_data = get_fb(f"sessions/{session_name}")
+    
+    # 파트장 정보
     leader = {
         'name': s_data.get('leader_name', {}).get('stringValue', '미정'),
-        'instagram': s_data.get('instagram', {}).get('stringValue', '@moyorak')
+        'instagram': s_data.get('instagram', {}).get('stringValue', '@moyorak'),
+        'is_active': s_data.get('is_active', {}).get('booleanValue', True)
     }
     
-    # 2. 키보드/드럼 활성화 상태 체크
-    is_active = s_data.get('is_active', {}).get('booleanValue', True)
-    if session_name in ['Keyboard', 'Drum'] and not is_active:
-        return "<h3>현재 공연 기간이 아니어서 비활성화된 세션입니다.</h3><a href='/'>홈으로</a>"
+    # 드럼, 키보드 비활성화 체크
+    if session_name in ['Drum', 'Keyboard'] and not leader['is_active']:
+        flash(f"현재 {session_name} 세션은 대여 기간이 아닙니다.")
+        return redirect(url_for('home'))
 
-    # 3. 악기 목록 (Guitar, Base 전용 - 현재는 샘플 데이터)
-    instruments = []
-    if session_name in ['Guitar', 'Base']:
-        instruments = [{'name': f'{session_name} 공용 1호', 'status': '대여가능', 'img': '/static/images/inst_sample.png'}]
+    return render_template('instrument.html', session_name=session_name, leader=leader)
 
-    return render_template('instrument.html', 
-                           session_name=session_name, 
-                           leader=leader, 
-                           instruments=instruments,
-                           user=session.get('user'))
+# --- ⚙️ 관리자 설정 페이지 (핵심!) ---
+@app.route('/admin/setup', methods=['GET', 'POST'])
+def admin_setup():
+    if session.get('user') != 'admin': return redirect('/')
 
-# --- 🔐 로그인 / 로그아웃 ---
+    if request.method == 'POST':
+        target_s = request.form.get('target_session')
+        new_name = request.form.get('leader_name')
+        new_insta = request.form.get('instagram')
+        # On/Off 스위치 값 처리 (체크박스)
+        is_active = True if request.form.get('is_active') == 'on' else False
+
+        url = f"{BASE_URL}/sessions/{target_s}"
+        payload = {
+            "fields": {
+                "leader_name": {"stringValue": new_name},
+                "instagram": {"stringValue": new_insta},
+                "is_active": {"booleanValue": is_active}
+            }
+        }
+        # PATCH로 부분 업데이트
+        requests.patch(f"{url}?updateMask.fieldPaths=leader_name&updateMask.fieldPaths=instagram&updateMask.fieldPaths=is_active", json=payload)
+        flash(f"{target_s} 정보가 업데이트되었습니다.")
+        return redirect(url_for('admin_setup'))
+
+    return render_template('admin_setup.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':

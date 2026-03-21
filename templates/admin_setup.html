@@ -1,0 +1,27 @@
+<body style="background:#000; color:#fff; text-align:center; padding:50px;">
+    <h1>⚙️ 관리자 설정</h1>
+    <div style="background:#111; display:inline-block; padding:30px; border-radius:15px; border:1px solid #222; text-align:left;">
+        <form method="POST">
+            <label>수정할 세션 선택:</label><br>
+            <select name="target_session" style="width:100%; padding:10px; margin-bottom:20px;">
+                <option value="Vocal">Vocal</option>
+                <option value="Guitar">Guitar</option>
+                <option value="Base">Base</option>
+                <option value="Drum">Drum</option>
+                <option value="Keyboard">Keyboard</option>
+            </select><br>
+
+            <label>파트장 이름:</label><br>
+            <input type="text" name="leader_name" style="width:100%; padding:10px; margin-bottom:20px;"><br>
+
+            <label>인스타그램 (@):</label><br>
+            <input type="text" name="instagram" style="width:100%; padding:10px; margin-bottom:20px;"><br>
+
+            <label>대여 기능 활성화 (Drum/Keyboard 전용):</label>
+            <input type="checkbox" name="is_active" checked style="margin-bottom:30px;"><br>
+
+            <button type="submit" style="width:100%; padding:15px; background:#f39c12; border:none; font-weight:bold; cursor:pointer;">설정 저장하기</button>
+        </form>
+    </div>
+    <br><br><a href="/" style="color:#666; text-decoration:none;">홈으로 돌아가기</a>
+</body>
