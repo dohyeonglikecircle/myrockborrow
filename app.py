@@ -1,14 +1,22 @@
 import os
 import requests
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_black_edition_2026'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=3)
+app.config['SECRET_KEY'] = 'moyorak_calendar_2026'
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
 BASE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents"
+
+# 세션별 지정 색상 (이미지 느낌 살리기)
+SESSION_COLORS = {
+    'Guitar': '#e67e22',   # 주황
+    'Base': '#f1c40f',     # 노랑
+    'Drum': '#3498db',     # 파랑
+    'Keyboard': '#9b59b6', # 보라
+    'Vocal': '#2ecc71'      # 초록
+}
 
 def get_fb(path):
     try:
@@ -20,28 +28,29 @@ def get_fb(path):
 def home():
     return render_template('index.html', user=session.get('user'))
 
-# --- 🎸 세션 상세 페이지 ---
 @app.route('/session/<session_name>')
 def view_session(session_name):
     if not session.get('user'): return redirect(url_for('login'))
 
     s_data = get_fb(f"sessions/{session_name}")
-    
-    # 파트장 정보
     leader = {
         'name': s_data.get('leader_name', {}).get('stringValue', '미정'),
         'instagram': s_data.get('instagram', {}).get('stringValue', '@moyorak'),
         'is_active': s_data.get('is_active', {}).get('booleanValue', True)
     }
-    
-    # 드럼, 키보드 비활성화 체크
-    if session_name in ['Drum', 'Keyboard'] and not leader['is_active']:
-        flash(f"현재 {session_name} 세션은 대여 기간이 아닙니다.")
-        return redirect(url_for('home'))
 
-    return render_template('instrument.html', session_name=session_name, leader=leader)
+    # 캘린더용 날짜 계산 (이번 주 월~일)
+    today = datetime.now()
+    start_week = today - timedelta(days=today.weekday())
+    week_days = [(start_week + timedelta(days=i)).strftime('%m/%d') for i in range(7)]
 
-# --- ⚙️ 관리자 설정 페이지 (핵심!) ---
+    return render_template('instrument.html', 
+                           session_name=session_name, 
+                           leader=leader, 
+                           week_days=week_days,
+                           color=SESSION_COLORS.get(session_name, '#333'))
+
+# --- 🔐 사이트 내 관리자 수정 기능 ---
 @app.route('/admin/setup', methods=['GET', 'POST'])
 def admin_setup():
     if session.get('user') != 'admin': return redirect('/')
@@ -50,7 +59,6 @@ def admin_setup():
         target_s = request.form.get('target_session')
         new_name = request.form.get('leader_name')
         new_insta = request.form.get('instagram')
-        # On/Off 스위치 값 처리 (체크박스)
         is_active = True if request.form.get('is_active') == 'on' else False
 
         url = f"{BASE_URL}/sessions/{target_s}"
@@ -61,9 +69,9 @@ def admin_setup():
                 "is_active": {"booleanValue": is_active}
             }
         }
-        # PATCH로 부분 업데이트
+        # 사이트 내에서 입력한 값으로 파이어베이스 즉시 업데이트
         requests.patch(f"{url}?updateMask.fieldPaths=leader_name&updateMask.fieldPaths=instagram&updateMask.fieldPaths=is_active", json=payload)
-        flash(f"{target_s} 정보가 업데이트되었습니다.")
+        flash(f"{target_s} 파트 정보가 성공적으로 수정되었습니다.")
         return redirect(url_for('admin_setup'))
 
     return render_template('admin_setup.html')
@@ -80,11 +88,6 @@ def login():
             return redirect(url_for('home'))
         flash("로그인 실패")
     return render_template('login.html')
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     app.run(debug=True)

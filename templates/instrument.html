@@ -2,76 +2,69 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>{{ session_name }} - 모여락</title>
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Pretendard', sans-serif; margin: 0; }
-        .container { display: flex; max-width: 1200px; margin: 0 auto; padding: 40px 20px; gap: 30px; }
+        body { background-color: #000; color: #fff; font-family: sans-serif; margin: 0; }
+        .wrapper { display: flex; height: 100vh; }
         
-        /* 중앙 영역 */
-        .main-content { flex: 3; background: #111; border: 1px solid #222; border-radius: 15px; padding: 30px; }
-        .vocal-msg { padding: 100px 0; color: #666; font-size: 1.2em; }
+        /* 중앙 캘린더 영역 */
+        .calendar-container { flex: 4; padding: 20px; overflow-y: auto; border-right: 1px solid #222; }
+        .calendar-grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); border: 1px solid #333; }
+        .grid-header { background: #111; padding: 15px; text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; font-weight: bold; }
+        .time-col { background: #0a0a0a; text-align: right; padding-right: 10px; border-bottom: 1px solid #222; font-size: 12px; height: 50px; }
+        .slot { border-right: 1px solid #222; border-bottom: 1px solid #222; position: relative; height: 50px; }
         
-        /* 오른쪽 사이드바 */
-        .sidebar { flex: 1; position: sticky; top: 40px; height: fit-content; }
-        .info-card { background: #111; border: 1px solid #222; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
-        
-        h1 { color: #f39c12; margin-top: 0; }
-        h3 { color: #f39c12; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        
-        .inst-img { width: 100%; border-radius: 10px; background: #000; margin-bottom: 15px; }
-        .insta-link { color: #3498db; text-decoration: none; font-weight: bold; }
-        
-        /* 예약 시간표 스타일 */
-        .timetable { background: #0a0a0a; border-radius: 10px; padding: 10px; margin-top: 20px; }
-        .time-slot { border-bottom: 1px solid #222; padding: 10px; font-size: 0.9em; display: flex; justify-content: space-between; }
-        .reserved { background: #f39c12; color: #000; font-weight: bold; border-radius: 4px; padding: 2px 8px; }
+        /* 예약 블록 스타일 (선택된 세션 색상 적용) */
+        .booked { position: absolute; left: 2px; right: 2px; background: {{ color }}; color: #000; 
+                  font-size: 11px; padding: 4px; border-radius: 3px; font-weight: bold; z-index: 10; }
+
+        /* 오른쪽 정보바 */
+        .info-sidebar { flex: 1; padding: 30px; background: #0a0a0a; }
+        .leader-box { background: #111; padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; }
+        .insta-btn { color: #f39c12; text-decoration: none; font-weight: bold; }
+        .reserve-form input { width: 100%; padding: 10px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #444; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="main-content">
-            <h1>🎸 {{ session_name }}</h1>
-            
-            {% if session_name == 'Vocal' %}
-                <div class="vocal-msg">보컬 세션은 별도의 악기 예약 기능이 없습니다.</div>
-            {% else %}
-                <div class="box">
-                    <h3>🎹 대여 악기</h3>
-                    <div style="background:#000; padding:20px; text-align:center; border-radius:10px;">
-                        <p style="color:#444;">등록된 악기 사진이 여기에 표시됩니다.</p>
+    <div class="wrapper">
+        <div class="calendar-container">
+            <h2 style="color:{{ color }}">🎸 {{ session_name }} Weekly Schedule</h2>
+            <div class="calendar-grid">
+                <div class="grid-header">시간</div>
+                {% for day in week_days %}<div class="grid-header">{{ day }}</div>{% endfor %}
+
+                {% for hour in range(9, 23) %}
+                    <div class="time-col">{{ hour }}:00</div>
+                    {% for day in range(7) %}
+                    <div class="slot">
+                        {% if hour == 14 and day == 2 %}
+                        <div class="booked" style="height: 100px;">28K 조도형<br>(기타 1호)</div>
+                        {% endif %}
                     </div>
-                    
-                    <div class="timetable">
-                        <h3>📅 예약 현황 (30분 단위)</h3>
-                        <div class="time-slot"><span>09:00 - 09:30</span> <span class="reserved">28K 조도형</span></div>
-                        <div class="time-slot"><span>09:30 - 10:00</span> <span class="reserved">28K 조도형</span></div>
-                        <div class="time-slot"><span>10:00 - 10:30</span> <span style="color:#444;">대여 가능</span></div>
-                    </div>
-                </div>
-            {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
         </div>
 
-        <div class="sidebar">
-            <div class="info-card">
-                <h3>👤 파트장</h3>
-                <p>이름: <strong>{{ leader.name }}</strong></p>
-                <p>인스타: <a href="#" class="insta-link">{{ leader.instagram }}</a></p>
+        <div class="info-sidebar">
+            <div class="leader-box">
+                <h3>👤 파트장 정보</h3>
+                <p>이름: {{ leader.name }}</p>
+                <p>인스타: <a href="#" class="insta-btn">{{ leader.instagram }}</a></p>
             </div>
-
+            
             {% if session_name != 'Vocal' %}
-            <div class="info-card">
-                <h3>⏰ 예약하기</h3>
-                <form>
-                    <input type="date" style="width:100%; background:#000; color:#fff; border:1px solid #333; padding:10px; margin-bottom:10px;">
-                    <select style="width:100%; background:#000; color:#fff; border:1px solid #333; padding:10px;">
-                        <option>시작 시간</option>
-                        <option>09:00</option>
-                        <option>09:30</option>
-                    </select>
-                    <button type="button" style="width:100%; background:#f39c12; border:none; padding:12px; margin-top:15px; font-weight:bold; cursor:pointer; border-radius:5px;">예약 신청</button>
+            <div class="leader-box reserve-form">
+                <h3>📅 예약하기</h3>
+                <form action="/reserve" method="POST">
+                    날짜: <input type="date" name="date">
+                    시간: <input type="time" name="start" step="1800">
+                    <button type="submit" style="width:100%; padding:15px; background:{{ color }}; border:none; font-weight:bold; cursor:pointer;">예약 신청</button>
                 </form>
             </div>
+            {% else %}
+            <p style="color:#666; text-align:center;">보컬 세션은 예약 기능이 활성화되지 않았습니다.</p>
             {% endif %}
+            <center><a href="/" style="color:#444; text-decoration:none;">← 홈으로</a></center>
         </div>
     </div>
 </body>
