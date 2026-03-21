@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'moyorak_final_bass_fix'
+app.config['SECRET_KEY'] = 'moyorak_final_full_v17'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=5)
 
 PROJECT_ID = os.environ.get('FB_PROJECT_ID')
@@ -14,9 +14,9 @@ SESSION_COLORS = {
     'Guitar': '#e67e22', 'Base': '#f1c40f', 'Drum': '#3498db', 'Keyboard': '#9b59b6', 'Vocal': '#2ecc71'
 }
 
-# 🎸 화면에 보여줄 이름만 매핑 (DB는 Base, 화면은 Bass)
+# 🎸 화면 표시용 이름 매핑 (DB는 Base, 화면은 Bass)
 SESSION_DISPLAY_NAMES = {
-    'Vocal': 'Vocal', 'Guitar': 'Guitar', 'Base': 'Bass', 'Drum': 'Drum', 'Keyboard': 'Keyboard'
+    'Vocal': '보컬', 'Guitar': '기타', 'Base': '베이스(Bass)', 'Drum': '드럼', 'Keyboard': '키보드'
 }
 
 SESSION_MAP = {'Vocal': 'V', 'Guitar': 'G', 'Base': 'B', 'Drum': 'D', 'Keyboard': 'K'}
@@ -48,6 +48,7 @@ def signup():
             "session": {"stringValue": request.form.get('session')}
         }}
         requests.patch(f"{BASE_URL}/users/{u_id}", json=payload)
+        flash("회원가입 완료!")
         return redirect(url_for('login'))
     gens = [str(int(g)) if g % 1 == 0 else str(g) for g in [x * 0.5 for x in range(38, 59)]]
     return render_template('signup.html', generations=gens)
@@ -67,43 +68,35 @@ def login():
             session['user_gen'] = u_d.get('generation', {}).get('stringValue')
             session['user_session'] = u_d.get('session', {}).get('stringValue')
             return redirect(url_for('home'))
+        flash("로그인 실패")
     return render_template('login.html')
 
 @app.route('/session/<session_name>')
 def view_session(session_name):
     if not session.get('user'): return redirect(url_for('login'))
-    
-    # DB 조회는 원래대로 session_name(Base) 사용
     s_raw = get_fb(f"sessions/{session_name}")
     leader = {'name': s_raw.get('leader_name', {}).get('stringValue', '미정'), 'instagram': s_raw.get('instagram', {}).get('stringValue', '@moyorak')}
-    
     all_docs = get_fb_collection("instruments")
     instruments = []
     for doc in all_docs:
         f = doc.get('fields', {})
         if f.get('session', {}).get('stringValue') == session_name:
             instruments.append({'id': doc.get('name').split('/')[-1], 'name': f.get('model_name', {}).get('stringValue', '이름 없음'), 'img': f.get('image_url', {}).get('stringValue', '')})
-    
     if not instruments and session_name != 'Vocal':
         instruments = [{'name': f'{session_name} 공용', 'img': '', 'id': 'default'}]
-    
     res_docs = get_fb_collection("reservations")
     reservations = []
     for d in res_docs:
         f = d.get('fields', {})
         if f.get('session', {}).get('stringValue') == session_name:
             reservations.append({'user': f.get('user_display', {}).get('stringValue'), 'inst': f.get('inst_name', {}).get('stringValue'), 'date': f.get('date', {}).get('stringValue'), 'start': f.get('start_time', {}).get('stringValue'), 'end': f.get('end_time', {}).get('stringValue')})
-    
     today = datetime.now()
     week_days = [(today + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
     
-    # 화면에 보여줄 이름 결정 (Base -> Bass)
-    display_name = SESSION_DISPLAY_NAMES.get(session_name, session_name)
-
-    return render_template('instrument.html', 
-                           session_name=session_name, 
-                           display_name=display_name, # Bass가 전달됨
-                           leader=leader, instruments=instruments, week_days=week_days, reservations=reservations, color=SESSION_COLORS.get(session_name, '#333'), user=session.get('user'), is_admin=(session.get('user') == 'admin'))
+    # Bass로 표시하기 위한 display_name
+    display_name = 'Bass' if session_name == 'Base' else session_name
+    
+    return render_template('instrument.html', session_name=session_name, display_name=display_name, leader=leader, instruments=instruments, week_days=week_days, reservations=reservations, color=SESSION_COLORS.get(session_name, '#333'), user=session.get('user'), is_admin=(session.get('user') == 'admin'))
 
 @app.route('/reserve', methods=['POST'])
 def reserve():

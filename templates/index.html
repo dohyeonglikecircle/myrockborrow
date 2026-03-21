@@ -5,16 +5,28 @@
     <title>모여락 공용악기대여</title>
     <style>
         body { background-color: #0d0d0d; color: #fff; font-family: sans-serif; margin: 0; text-align: center; }
-        header { background: #111; padding: 10px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; min-height: 60px; }
-        .logo-area { display: flex; align-items: center; gap: 15px; }
-        /* 🚀 로고 크기와 경로 강제 고정 */
-        .main-logo { width: 45px; height: 45px; object-fit: contain; display: block; }
-        .site-title { color: #f39c12; font-size: 1.5em; font-weight: bold; margin: 0; }
+        header { background: #111; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .main-logo { height: 40px; width: 40px; object-fit: contain; }
+        .site-title { color: #f39c12; font-size: 1.4em; font-weight: bold; margin: 0; }
         .nav-btn { background: #222; border: 1px solid #444; color: #fff; padding: 8px 18px; border-radius: 6px; text-decoration: none; font-size: 0.9em; font-weight: bold; margin-left: 5px; }
         .signup-btn { background: #f39c12; color: #000; border: none; }
-        .btn-container { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 60px 0; }
+        .main-content { padding: 60px 20px; }
+        .btn-container { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 40px 0; }
         .session-btn { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 18px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; transition: 0.2s; }
+        .session-btn:hover { border-color: #f39c12; background: #222; }
         .admin-btn { background: #e74c3c; border: none; cursor: pointer; color: white; padding: 18px 30px; border-radius: 12px; font-weight: bold; }
+        
+        /* 🔗 하단 버튼 및 링크 스타일 */
+        .divider { border-top: 1px dashed #222; margin: 50px auto; width: 60%; }
+        .quick-links { display: flex; justify-content: center; gap: 15px; margin-top: 30px; }
+        .link-btn { 
+            background: transparent; border: 2px solid #1e3799; color: #fff; 
+            padding: 12px 25px; border-radius: 30px; text-decoration: none; 
+            font-size: 0.9em; font-weight: bold; transition: 0.3s;
+        }
+        .link-btn:hover { background: #1e3799; transform: scale(1.05); }
+
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
         .modal-content { background: #1a1a1a; margin: 10% auto; padding: 35px; border-radius: 20px; width: 380px; border: 1px solid #333; text-align: left; }
         .modal-input { width: 100%; padding: 12px; margin: 10px 0; background: #000; color: #fff; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; }
@@ -23,7 +35,7 @@
 <body>
     <header>
         <div class="logo-area">
-            <img src="{{ url_for('static', filename='images/moyorak_logo.png') }}" alt="Logo" class="main-logo" onerror="this.src='https://via.placeholder.com/45?text=ML';">
+            <img src="{{ url_for('static', filename='images/moyorak_logo.png') }}" alt="Logo" class="main-logo">
             <h1 class="site-title">모여락 공용악기대여</h1>
         </div>
         <div>
@@ -36,24 +48,35 @@
             {% endif %}
         </div>
     </header>
+
     <div class="main-content">
+        <p style="color:#888; font-size: 0.9em;">원하는 세션의 악기를 확인하고 대여하세요!</p>
         <div class="btn-container">
             <a href="/session/Vocal" class="session-btn">🎤 보컬</a>
             <a href="/session/Guitar" class="session-btn">🎸 기타</a>
-            <a href="/session/Base" class="session-btn">🎸 베이스</a>
+            <a href="/session/Base" class="session-btn">🎸 베이스(Bass)</a>
             <a href="/session/Drum" class="session-btn">🥁 드럼</a>
             <a href="/session/Keyboard" class="session-btn">🎹 키보드</a>
             {% if user == 'admin' %}<button onclick="openAdmin()" class="admin-btn">⚙️ 관리자 악기 등록</button>{% endif %}
         </div>
+
+        <div class="divider"></div>
+
+        <p style="color:#666; font-size: 0.85em;">🔗 빠른 바로가기</p>
+        <div class="quick-links">
+            <a href="https://ddrak.vercel.app/" target="_blank" class="link-btn">📌 화요뜨락 홈페이지</a>
+            <a href="#" class="link-btn">📌 공연 선곡 및 일정</a>
+        </div>
     </div>
+
     <div id="adminModal" class="modal"><div class="modal-content">
         <h2 style="color:#e74c3c; margin-top:0;">신규 악기 등록</h2>
         <form action="/admin/add_instrument" method="POST">
-            <select name="session_name" class="modal-input"><option value="Guitar">Guitar</option><option value="Bass">Base</option><option value="Drum">Drum</option><option value="Keyboard">Keyboard</option></select>
-            <input type="text" name="instrument_model" class="modal-input" placeholder="모델명" required>
+            <select name="session_name" class="modal-input"><option value="Guitar">Guitar</option><option value="Base">Base</option><option value="Drum">Drum</option><option value="Keyboard">Keyboard</option></select>
+            <input type="text" name="instrument_model" class="modal-input" placeholder="악기 모델명" required>
             <input type="text" name="instrument_img" class="modal-input" placeholder="사진 URL">
             <button type="submit" style="width:100%; padding:15px; background:#e74c3c; border:none; color:#fff; font-weight:bold; border-radius:10px;">등록</button>
-            <button type="button" onclick="closeAdmin()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">닫기</button>
+            <button type="button" onclick="closeAdmin()" style="width:100%; background:none; border:none; color:#555; margin-top:10px;">취소</button>
         </form>
     </div></div>
     <script>
